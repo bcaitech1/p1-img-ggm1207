@@ -11,15 +11,6 @@ from config import get_args
 from network import ResNetClassification
 from prepare import get_dataloader, get_classes
 
-# TODO: uniform 분포로 수정 해야 됨
-#  def weights_init(m):
-#      classname = m.__class__.__name__
-#      if classname.find("Conv") != -1:  # -1 mean, no find
-#          nn.init.normal_(m.weight, 0.0, 0.02)
-#      elif classname.find("BatchNorm") != -1:
-#          nn.init.normal_(m.weight, 1.0, 0.02)
-#          nn.init.zeros_(m.bias)
-
 
 def init_weights(m):
     for name, param in m.named_parameters():
@@ -66,6 +57,8 @@ def evaluate(args, model, loss_fn, dataloader):
     epoch_loss = 0.0
     label_idx = ["gender", "age", "mask"].index(args.train_key)
 
+    acc_count = 0
+
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
 
@@ -74,8 +67,15 @@ def evaluate(args, model, loss_fn, dataloader):
 
             output = model(images)
 
+            if args.train_key != "age":
+                acc_count += (
+                    labels.detach() == torch.argmax(output.detach(), dim=1)
+                ).sum()
+
             loss = loss_fn(output, labels)
             epoch_loss += loss.item()
+
+    print("Accuracy: ", acc_count / len(dataloader))
 
     return epoch_loss / len(dataloader)
 
@@ -89,6 +89,11 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
         valid_loss = evaluate(args, model, loss_fn, test_dataloader)
 
+        if valid_loss < best_valid_loss:
+            model_save_path = None
+            best_valid_loss = valid_loss
+            torch.save(model, model_save_path)
+
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
@@ -96,9 +101,13 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         print(f"\tTrain Loss: {train_loss:.3f}")
         print(f"\tValidation Loss: {valid_loss:.3f}")
 
+
 def main(args):
+    wandb.init(project="p-stage-1", reinit=True)
+    wandb.config.update(args)
+
     train_dataloader, test_dataloader = get_dataloader(args)
-    
+
     classes = get_classes(args.train_key)
     args.classes = classes
 
@@ -106,6 +115,8 @@ def main(args):
 
     model = ResNetClassification(num_class).to(args.device)
     model.apply(init_weights)
+
+    wandb.watch(model)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
     loss_fn = nn.MSELoss() if args.train_key == "age" else nn.CrossEntropyLoss()
