@@ -4,7 +4,7 @@ import argparse
 
 def get_args():
     parser = argparse.ArgumentParser(description="DCGAN")
-    parser.add_argument("--data_dir", type=str, default="/opt/ml/input/data/")
+    parser.add_argument("--data_dir", type=str, default="/opt/ml/input/data/train")
     parser.add_argument(
         "--workers", type=int, default=6, help="number of data loading workers"
     )

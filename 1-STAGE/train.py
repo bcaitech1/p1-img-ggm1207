@@ -37,7 +37,7 @@ def train(args, model, optimizer, loss_fn, dataloader):
     model.train()
 
     epoch_loss = 0.0
-    label_idx = ["gender", "age", "mask"].index(args.split_key)
+    label_idx = ["gender", "age", "mask"].index(args.train_key)
 
     for idx, (images, labels) in enumerate(dataloader):
         optimizer.zero_grad()
@@ -61,7 +61,7 @@ def evaluate(args, model, loss_fn, dataloader):
     model.eval()
 
     epoch_loss = 0.0
-    label_idx = ["gender", "age", "mask"].index(args.split_key)
+    label_idx = ["gender", "age", "mask"].index(args.train_key)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
@@ -93,10 +93,10 @@ def main(args):
     classes = get_classes(args.train_key)
     args.classes = classes
 
-    model = ResNetClassification(len(args.classes))
+    model = ResNetClassification(len(args.classes)).to(args.device)
     model.apply(init_weights)
 
-    optimizer = optim.Adam(model.parameters(), lr=args.LEARNING_RATE)
+    optimizer = optim.Adam(model.parameters(), lr=args.lr)
     loss_fn = nn.MSELoss() if args.train_key == "age" else nn.CrossEntropyLoss()
 
     run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader)
