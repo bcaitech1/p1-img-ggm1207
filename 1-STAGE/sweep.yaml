@@ -6,7 +6,7 @@ metric:
 parameters:
     test:
         distribution: constant
-        value: False
+        value: false
     epochs:
         distribution: constant
         value: 20

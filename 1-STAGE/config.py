@@ -37,6 +37,7 @@ def get_args():
     )
     parser.add_argument("--manual_seed", type=int, default=42, help="manual seed")
     parser.add_argument("--test", type=bool, default=True, help="small dataset")
+    parser.add_argument("--optimizer", type=str, default="adam", help="small dataset")
 
     args, unknown = parser.parse_known_args()
 

@@ -130,6 +130,8 @@ def main(args):
     wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
 
+    args = wandb.config
+
     train_dataloader, test_dataloader = get_dataloader(args)
 
     classes = get_classes(args.train_key)
