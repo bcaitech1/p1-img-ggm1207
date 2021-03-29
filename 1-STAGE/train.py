@@ -61,6 +61,7 @@ def evaluate(args, model, loss_fn, dataloader):
     label_idx = ["gender", "age", "mask"].index(args.train_key)
 
     acc_count = 0
+    acc_len = 0
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
@@ -75,12 +76,17 @@ def evaluate(args, model, loss_fn, dataloader):
                     labels.detach() == torch.argmax(output.detach(), dim=1)
                 ).sum().item()
 
+                acc_len += len(labels)
+
             loss = loss_fn(output, labels)
             epoch_loss += loss.item()
 
-    print("Accuracy: ", acc_count / len(dataloader))
+    accuracy = 0 
 
-    return epoch_loss / len(dataloader)
+    if args.train_key != "age":
+        accuracy = acc_count / acc_len
+
+    return epoch_loss / len(dataloader), accuracy
 
 
 def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
@@ -90,12 +96,12 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         start_time = time.time()
 
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
-        valid_loss = evaluate(args, model, loss_fn, test_dataloader)
+        valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
 
-#        if valid_loss < best_valid_loss:
-#            model_save_path = None
-#            best_valid_loss = valid_loss
-#            torch.save(model, model_save_path)
+        if valid_loss < best_valid_loss:
+            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}-{args.train_key}.pt")
+            best_valid_loss = valid_loss
+            torch.save(model, model_save_path)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -103,6 +109,7 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
         print(f"\tValidation Loss: {valid_loss:.3f}")
+        print(f"\tValidation Accuracy: {valid_acc:.3f}")
 
 
 def main(args):
