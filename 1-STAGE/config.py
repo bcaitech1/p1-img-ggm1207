@@ -39,6 +39,7 @@ def get_args():
         help="path of model's weights",
     )
     parser.add_argument("--manual_seed", type=int, default=42, help="manual seed")
+    parser.add_argument("--test", type=bool, default=True, help="small dataset")
 
     args, unknown = parser.parse_known_args()
 

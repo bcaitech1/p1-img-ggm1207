@@ -36,6 +36,10 @@ class MaskDataSet(Dataset):
         csv_file = os.path.join(args.data_dir, "train.csv")
         self.datas = pd.read_csv(csv_file)
         self.images, self.labels = self._load_image_files_path(args, is_train)
+
+        if args.test:
+            self.images, self.labels = self.images[:100], self.labels[:100]
+
         self.transform = transform
 
     def __getitem__(self, idx):
