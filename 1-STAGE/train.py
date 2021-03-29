@@ -101,9 +101,10 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
 
         if valid_loss < best_valid_loss:
-            model_save_path = os.path.join(
-                args.model_path, f"{wandb.run.name}-{args.train_key}.pt"
-            )
+            #  model_save_path = os.path.join(
+            #      args.model_path, f"{wandb.run.name}-{args.train_key}.pt"
+            #  )
+            model_save_path = os.path.join(args.model_path, f"{args.train_key}.pt")
             best_valid_loss = valid_loss
             torch.save(model, model_save_path)
 
@@ -141,7 +142,13 @@ def main(args):
 
     wandb.watch(model)
 
-    optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    if wandb.config.optimizer == "adam":
+        optimizer = optim.Adam(model.parameters(), lr=args.lr)
+    elif wandb.config.optimizer == "adamw":
+        optimizer = optim.AdamW(model.parameters(), lr=args.lr)
+    else:
+        optimizer = optim.SGD(model.parameters(), lr=args.lr)
+
     loss_fn = nn.MSELoss() if args.train_key == "age" else nn.CrossEntropyLoss()
 
     run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader)

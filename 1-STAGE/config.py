@@ -24,9 +24,6 @@ def get_args():
         "--lr", type=float, default=0.0002, help="learning rate, default=0.0002"
     )
     parser.add_argument(
-        "--split_key", type=str, default="age", help="split key in ['age', 'gender']"
-    )
-    parser.add_argument(
         "--train_key",
         type=str,
         default="mask",

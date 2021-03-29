@@ -1,1 +1,35 @@
 program: train.py
+method: random
+metric:
+    goal: minimize
+    name: valid_loss
+parameters:
+    test:
+        distribution: constant
+        value: False
+    epochs:
+        distribution: constant
+        value: 20
+    batch_size:
+        distribution: int_uniform
+        min: 32
+        max: 128
+    lr:
+        min: 0.0002
+        max: 0.001
+    seed:
+        distribution: int_uniform
+        min: 1
+        max: 10000
+    optimizer:
+        distribution: categorical
+        values:
+            - adam
+            - adamw
+            - sgd
+    train_key:
+        distribution: categorical
+        values:
+            - gender
+            - age
+            - mask

@@ -58,9 +58,9 @@ class MaskDataSet(Dataset):
             n_splits=1, test_size=args.valid_size, random_state=args.seed
         )
 
-        for train_index, valid_index in split.split(
-            self.datas, self.datas[args.split_key]
-        ):
+        split_key = "age" if args.train_key == "age" else "gender"
+
+        for train_index, valid_index in split.split(self.datas, self.datas[split_key]):
             train_dataset = self.datas.loc[train_index]
             valid_dataset = self.datas.loc[valid_index]
 
