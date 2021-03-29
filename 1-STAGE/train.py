@@ -43,9 +43,12 @@ def train(args, model, optimizer, loss_fn, dataloader):
         optimizer.zero_grad()
 
         labels = labels[label_idx]
-        images, labels = images.to(args.device), labels.to(args.device)
+        images, labels = images.float().to(args.device), labels.float().to(args.device)
 
         output = model(images)
+
+        if args.train_key == "age":
+            output = torch.squeeze(output, 1)
 
         loss = loss_fn(output, labels)
 
@@ -90,19 +93,18 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        print(f"\tTrain Loss >> d_loss : {d_loss:.3f} g_loss: {g_loss:.3f}")
-        print(
-            f"\tValidation Loss >> d_loss : {d_valid_loss:.3f} g_loss: {g_valid_loss:.3f}"
-        )
-
+        print(f"\tTrain Loss: {train_loss:.3f}")
+        print(f"\tValidation Loss: {valid_loss:.3f}")
 
 def main(args):
     train_dataloader, test_dataloader = get_dataloader(args)
-
+    
     classes = get_classes(args.train_key)
     args.classes = classes
 
-    model = ResNetClassification(len(args.classes)).to(args.device)
+    num_class = 1 if args.train_key == "age" else len(args.classes)
+
+    model = ResNetClassification(num_class).to(args.device)
     model.apply(init_weights)
 
     optimizer = optim.Adam(model.parameters(), lr=args.lr)

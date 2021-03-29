@@ -72,7 +72,7 @@ class MaskDataSet(Dataset):
             image_id, gender_lbl, _, age_lbl = dir_name.split("_")
 
             gender_class = gender_classes.index(gender_lbl)
-            age_class = int(age_lbl)
+            age_class = float(age_lbl)
 
             for jpg_filepath in glob(dir_path + "/*"):
                 jpg_basename = os.path.basename(jpg_filepath)
