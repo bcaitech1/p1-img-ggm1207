@@ -86,6 +86,15 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
         valid_loss = evaluate(args, model, loss_fn, test_dataloader)
 
+        end_time = time.time()
+        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+        print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
+        print(f"\tTrain Loss >> d_loss : {d_loss:.3f} g_loss: {g_loss:.3f}")
+        print(
+            f"\tValidation Loss >> d_loss : {d_valid_loss:.3f} g_loss: {g_valid_loss:.3f}"
+        )
+
 
 def main(args):
     train_dataloader, test_dataloader = get_dataloader(args)
