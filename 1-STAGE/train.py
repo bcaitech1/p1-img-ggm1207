@@ -34,7 +34,10 @@ def train(args, model, optimizer, loss_fn, dataloader):
         optimizer.zero_grad()
 
         labels = labels[label_idx]
-        images, labels = images.float().to(args.device), labels.float().to(args.device)
+        images, labels = images.float().to(args.device), labels.to(args.device)
+
+        if args.train_key == "age":
+            labels = labels.float().to(args.device)
 
         output = model(images)
 
@@ -70,7 +73,7 @@ def evaluate(args, model, loss_fn, dataloader):
             if args.train_key != "age":
                 acc_count += (
                     labels.detach() == torch.argmax(output.detach(), dim=1)
-                ).sum()
+                ).sum().item()
 
             loss = loss_fn(output, labels)
             epoch_loss += loss.item()
@@ -89,10 +92,10 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
         valid_loss = evaluate(args, model, loss_fn, test_dataloader)
 
-        if valid_loss < best_valid_loss:
-            model_save_path = None
-            best_valid_loss = valid_loss
-            torch.save(model, model_save_path)
+#        if valid_loss < best_valid_loss:
+#            model_save_path = None
+#            best_valid_loss = valid_loss
+#            torch.save(model, model_save_path)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
