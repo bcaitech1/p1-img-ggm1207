@@ -73,15 +73,17 @@ def evaluate(args, model, loss_fn, dataloader):
 
             if args.train_key != "age":
                 acc_count += (
-                    labels.detach() == torch.argmax(output.detach(), dim=1)
-                ).sum().item()
+                    (labels.detach() == torch.argmax(output.detach(), dim=1))
+                    .sum()
+                    .item()
+                )
 
                 acc_len += len(labels)
 
             loss = loss_fn(output, labels)
             epoch_loss += loss.item()
 
-    accuracy = 0 
+    accuracy = 0
 
     if args.train_key != "age":
         accuracy = acc_count / acc_len
@@ -99,12 +101,23 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
 
         if valid_loss < best_valid_loss:
-            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}-{args.train_key}.pt")
+            model_save_path = os.path.join(
+                args.model_path, f"{wandb.run.name}-{args.train_key}.pt"
+            )
             best_valid_loss = valid_loss
             torch.save(model, model_save_path)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+        wandb.log(
+            {
+                "train_loss": train_loss,
+                "valid_loss": valid_loss,
+                "valid_acc": valid_acc,
+                "epoch": epoch,
+            }
+        )
 
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
