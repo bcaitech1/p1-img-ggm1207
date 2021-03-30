@@ -10,6 +10,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 
 def get_classes(key):
+    """ predict하기 위해서는 순서가 중요하다. """
     if key == "mask":
         return ["wear", "incorrect", "not wear"]
     if key == "age":
@@ -20,11 +21,14 @@ def get_classes(key):
 
 
 def get_transforms(args):
+    mean = [0.485, 0.456, 0.406]
+    std = [0.229, 0.224, 0.225]
+
     transform = transforms.Compose(
         [
-            transforms.Resize(args.image_size),
+            transforms.Resize((args.image_size, args.image_size)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,), (0.5,)),
+            transforms.Normalize(mean, std),
         ]
     )
 
@@ -55,7 +59,7 @@ class MaskDataSet(Dataset):
 
     def _load_image_files_path(self, args, is_train):
         split = StratifiedShuffleSplit(
-            n_splits=1, test_size=args.valid_size, random_state=args.seed
+            n_splits=1, test_size=args.valid_size, random_state=0  # 이 SEED값은 안 바꾸는 것이 좋다.
         )
 
         split_key = "age" if args.train_key == "age" else "gender"

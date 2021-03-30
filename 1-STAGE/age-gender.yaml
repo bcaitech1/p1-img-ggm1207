@@ -9,11 +9,13 @@ parameters:
         value: false
     epochs:
         distribution: constant
-        value: 20
+        value: 30
     batch_size:
-        distribution: int_uniform
-        min: 32
-        max: 128
+        distribution: categorical
+        values:
+            - 32
+            - 64
+            - 128
     lr:
         min: 0.0005
         max: 0.002
@@ -22,14 +24,6 @@ parameters:
         min: 1
         max: 10000
     optimizer:
-        distribution: categorical
-        values:
-            - adam
-            - adamw
-            - sgd
+        values: ["adam", "sgd", "adamw"]
     train_key:
-        distribution: categorical
-        values:
-            - gender
-            - age
-            - mask
+        values: ["gender", "age"]

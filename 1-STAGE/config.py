@@ -38,8 +38,15 @@ def get_args():
     parser.add_argument("--manual_seed", type=int, default=42, help="manual seed")
     parser.add_argument("--test", type=bool, default=True, help="small dataset")
     parser.add_argument("--optimizer", type=str, default="adam", help="small dataset")
+    parser.add_argument("--age_model", type=str, default="age.pt", help="small dataset")
+    parser.add_argument("--gender_model", type=str, default="gender.pt", help="small dataset")
+    parser.add_argument("--mask_model", type=str, default="mask.pt", help="small dataset")
 
-    args, unknown = parser.parse_known_args()
+    args, unknown = parser.parse_known_args(args=[])
+
+    args.age_model = os.path.join(args.model_path, args.age_model)
+    args.gender_model = os.path.join(args.model_path, args.gender_model)
+    args.mask_model = os.path.join(args.model_path, args.mask_model)
 
     if not os.path.exists(args.model_path):
         os.mkdir(args.model_path)

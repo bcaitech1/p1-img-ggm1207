@@ -1,6 +1,7 @@
 import os
 import time
 import math
+from datetime import datetime
 
 import wandb
 import torch
@@ -10,6 +11,8 @@ import torch.optim as optim
 from config import get_args
 from network import ResNetClassification
 from prepare import get_dataloader, get_classes
+
+from metrics import change_age_to_cat, cal_metrics, cal_accuracy, change_2d_to_1d
 
 
 def init_weights(m):
@@ -34,15 +37,13 @@ def train(args, model, optimizer, loss_fn, dataloader):
         optimizer.zero_grad()
 
         labels = labels[label_idx]
-        images, labels = images.float().to(args.device), labels.to(args.device)
-
-        if args.train_key == "age":
-            labels = labels.float().to(args.device)
+        images, labels = images.to(args.device), labels.to(args.device)
 
         output = model(images)
 
         if args.train_key == "age":
-            output = torch.squeeze(output, 1)
+            output = output.reshape(-1).float()
+            labels = labels.float()
 
         loss = loss_fn(output, labels)
 
@@ -60,8 +61,8 @@ def evaluate(args, model, loss_fn, dataloader):
     epoch_loss = 0.0
     label_idx = ["gender", "age", "mask"].index(args.train_key)
 
-    acc_count = 0
-    acc_len = 0
+    label_list = torch.tensor([]).to(args.device)
+    output_list = torch.tensor([]).to(args.device)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
@@ -71,24 +72,23 @@ def evaluate(args, model, loss_fn, dataloader):
 
             output = model(images)
 
-            if args.train_key != "age":
-                acc_count += (
-                    (labels.detach() == torch.argmax(output.detach(), dim=1))
-                    .sum()
-                    .item()
-                )
-
-                acc_len += len(labels)
+            if args.train_key == "age":
+                output = change_2d_to_1d(output)
 
             loss = loss_fn(output, labels)
             epoch_loss += loss.item()
 
-    accuracy = 0
+            if args.train_key == "age":
+                labels = change_age_to_cat(labels)
+                output = change_age_to_cat(output)
+            else: 
+                output = torch.argmax(output, dim=1)
+                output = change_2d_to_1d(output)
 
-    if args.train_key != "age":
-        accuracy = acc_count / acc_len
+            label_list = torch.cat((label_list, labels))
+            output_list = torch.cat((output_list, output))
 
-    return epoch_loss / len(dataloader), accuracy
+    return epoch_loss / len(dataloader), label_list, output_list
 
 
 def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
@@ -98,37 +98,39 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         start_time = time.time()
 
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
-        valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
+        valid_loss, label_list, output_list = evaluate(args, model, loss_fn, test_dataloader)
 
         if valid_loss < best_valid_loss:
-            #  model_save_path = os.path.join(
-            #      args.model_path, f"{wandb.run.name}-{args.train_key}.pt"
-            #  )
-            model_save_path = os.path.join(args.model_path, f"{args.train_key}.pt")
+            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
             best_valid_loss = valid_loss
             torch.save(model, model_save_path)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
+        f1_sco = cal_metrics(output_list, label_list)
+        acc = cal_accuracy(output_list, label_list)
+
         wandb.log(
             {
                 "train_loss": train_loss,
                 "valid_loss": valid_loss,
-                "valid_acc": valid_acc,
+                "f1_score": f1_sco,
+                "accuracy": acc,
                 "epoch": epoch,
             }
         )
 
+        print(type(valid_loss))
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
         print(f"\tValidation Loss: {valid_loss:.3f}")
-        print(f"\tValidation Accuracy: {valid_acc:.3f}")
 
 
 def main(args):
     wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
+    wandb.run.name = f"{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
 
     args = wandb.config
 
@@ -143,6 +145,9 @@ def main(args):
     model.apply(init_weights)
 
     wandb.watch(model)
+
+    print("wandb.config:")
+    print(wandb.config)
 
     if wandb.config.optimizer == "adam":
         optimizer = optim.Adam(model.parameters(), lr=args.lr)
