@@ -81,7 +81,7 @@ def evaluate(args, model, loss_fn, dataloader):
             if args.train_key == "age":
                 labels = change_age_to_cat(labels)
                 output = change_age_to_cat(output)
-            else: 
+            else:
                 output = torch.argmax(output, dim=1)
                 output = change_2d_to_1d(output)
 
@@ -98,7 +98,9 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         start_time = time.time()
 
         train_loss = train(args, model, optimizer, loss_fn, train_dataloader)
-        valid_loss, label_list, output_list = evaluate(args, model, loss_fn, test_dataloader)
+        valid_loss, label_list, output_list = evaluate(
+            args, model, loss_fn, test_dataloader
+        )
 
         if valid_loss < best_valid_loss:
             model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")

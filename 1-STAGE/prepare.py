@@ -59,7 +59,9 @@ class MaskDataSet(Dataset):
 
     def _load_image_files_path(self, args, is_train):
         split = StratifiedShuffleSplit(
-            n_splits=1, test_size=args.valid_size, random_state=0  # 이 SEED값은 안 바꾸는 것이 좋다.
+            n_splits=1,
+            test_size=args.valid_size,
+            random_state=0,  # 이 SEED값은 안 바꾸는 것이 좋다.
         )
 
         split_key = "age" if args.train_key == "age" else "gender"

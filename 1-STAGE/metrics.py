@@ -13,14 +13,13 @@ def change_age_to_cat(age_logit):
     age_logit = torch.where(age_logit < 30, torch.zeros_like(age_logit), age_logit)
     age_logit = torch.where(age_logit >= 60, torch.ones_like(age_logit) * 2, age_logit)
     age_logit = torch.where(age_logit >= 30, torch.ones_like(age_logit), age_logit)
-    
-    return age_logit.type(torch.long)    
+    return age_logit.type(torch.long)
 
 
 def cal_metrics(pred, label, score_fn=f1_score):
     pred = pred.detach().cpu().numpy()
     label = label.detach().cpu().numpy()
-    return score_fn(pred, label, average='macro')
+    return score_fn(pred, label, average="macro")
 
 
 def cal_accuracy(pred, label):
