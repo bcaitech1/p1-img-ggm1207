@@ -17,19 +17,26 @@ def eval_class(mi, gi, ai):
 
 
 def main(args):
-    wandb.init(preject="p-stage-1", reinit=True)
+    wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
+    wandb.run.name = f"predict-{wandb.run.name}"
 
     mse_loss = nn.MSELoss()
     cro_loss = nn.CrossEntropyLoss()
+
+    print(args)
 
     try:
         age_model = torch.load(args.age_model)
         gender_model = torch.load(args.gender_model)
         mask_model = torch.load(args.mask_model)
-    except E as e:
+    except Exception as e:
         print(e)
         raise "Failed Model load"
+
+    age_model.eval()
+    gender_model.eval()
+    mask_model.eval()
 
     _, valid_dataloader = get_dataloader(args)
     transform = get_transforms(args)
@@ -45,6 +52,8 @@ def main(args):
     acc = cal_accuracy(output_list, label_list)
     summary_df.loc["age"] = [f1_sco, acc]
 
+    age_label, age_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
+
     args.train_key = "gender"
     _, label_list, output_list = evaluate(
         args, gender_model, cro_loss, valid_dataloader
@@ -53,35 +62,49 @@ def main(args):
     acc = cal_accuracy(output_list, label_list)
     summary_df.loc["gender"] = [f1_sco, acc]
 
+    gen_label, gen_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
+
     args.train_key = "mask"
     _, label_list, output_list = evaluate(args, mask_model, cro_loss, valid_dataloader)
     f1_sco = cal_metrics(output_list, label_list)
     acc = cal_accuracy(output_list, label_list)
     summary_df.loc["mask"] = [f1_sco, acc]
 
-    table = wandb.Table(dataframe=summary_df)
+    mask_label, mask_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
 
-    for idx, image_base_path in enumerate(eval_df["ImageID"]):
-        image_full_path = os.path.join(eval_dir, "images", image_base_path)
-        image = Image.open(image_full_path)
-        image = transform(image).unsqueeze(0).cuda()
+    labels = []
+    outputs = []
 
-        age_label = age_model(image)
-        gender_label = gender_model(image)
-        mask_label = mask_model(image)
+    for mi, gi, ai in zip(mask_label, gen_label, age_label):
+        labels.append(eval_class(mi, gi, ai))
 
-        age_class = change_age_to_cat(age_label[0])
-        gender_class = torch.argmax(gender_label, dim=1)
-        mask_class = torch.argmax(mask_label, dim=1)
+    for mi, gi, ai in zip(mask_pred, gen_pred, age_pred):
+        outputs.append(eval_class(mi, gi, ai))
 
-        res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
-        eval_df.iloc[idx, 1] = res
+    acc = cal_accuracy(torch.tensor(labels), torch.tensor(outputs))
+    table = wandb.Table(dataframe=summary_df, rows=['age', 'gender', 'mask'])
 
-    wandb.log({"Result": table})
+    #  for idx, image_base_path in enumerate(eval_df["ImageID"]):
+    #      image_full_path = os.path.join(eval_dir, "images", image_base_path)
+    #      image = Image.open(image_full_path)
+    #      image = transform(image).unsqueeze(0).cuda()
+    #
+    #      age_label = age_model(image)
+    #      gender_label = gender_model(image)
+    #      mask_label = mask_model(image)
+    #
+    #      age_class = change_age_to_cat(age_label[0])
+    #      gender_class = torch.argmax(gender_label, dim=1)
+    #      mask_class = torch.argmax(mask_label, dim=1)
+    #
+    #      res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
+    #      eval_df.iloc[idx, 1] = res
 
-    sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
-    sub_path = os.path.join(sub_path, f"{wandb.run.name}.csv")
-    eval_df.to_csv(sub_path)
+    wandb.log({"Result": table, "valid_accuracy": acc})
+
+    #  sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
+    #  sub_path = os.path.join(sub_path, f"{wandb.run.name}.csv")
+    #  eval_df.to_csv(sub_path)
 
 
 if __name__ == "__main__":
