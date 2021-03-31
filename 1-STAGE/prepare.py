@@ -53,7 +53,6 @@ class MaskDataSet(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        #  return img, self.labels[idx]
         return img, self.labels[idx][self.label_idx]
 
     def __len__(self):

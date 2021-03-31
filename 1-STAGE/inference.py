@@ -45,7 +45,7 @@ def main(args):
         gender_label = gender_model(image)
         mask_label = mask_model(image)
 
-        age_class = change_age_to_cat(age_label[0])
+        age_class = torch.argmax(age_label, dim=1)
         gender_class = torch.argmax(gender_label, dim=1)
         mask_class = torch.argmax(mask_label, dim=1)
 

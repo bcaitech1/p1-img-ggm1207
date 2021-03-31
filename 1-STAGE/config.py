@@ -3,19 +3,29 @@ import argparse
 
 from functools import partial
 
+def str2bool(v):
+    if isinstance(v, bool):
+       return v
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def get_args():
     parser = argparse.ArgumentParser(description="DCGAN")
 
-    pa = partial(pa)
+    pa = partial(parser.add_argument)
 
     pa("--seed", type=int, default=42, help="random seed")
-    pa("--test", type=bool, default=True, help="small dataset")
+    pa("--test", type=str2bool, default=True, help="small dataset")
     pa("--filename", type=str, default="valid", help="filename")
     pa("--manual_seed", type=int, default=42, help="manual seed")
     pa("--data_dir", type=str, default="/opt/ml/input/data/train")
-    pa("--valid_size", type=float, default=0.2, help="valid rate")
+    pa("--valid_size", type=float, default=0.5, help="valid rate")
     pa("--age_model", type=str, default="age", help="small dataset")
+    pa("--model_save", type=str2bool, default=True, help="model save??")
     pa("--optimizer", type=str, default="adam", help="small dataset")
     pa("--batch_size", default=64, type=int, help="input batch size")
     pa("--mask_model", type=str, default="mask", help="small dataset")

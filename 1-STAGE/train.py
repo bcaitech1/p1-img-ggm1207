@@ -28,9 +28,8 @@ def epoch_time(start_time, end_time):
 
 
 def get_loss(args, loss_fn, outputs, labels):
-    if args.train_key == "age":
-        outputs = change_2d_to_1d(outputs)
-    return loss_fn(outputs, labels)
+    loss = loss_fn(outputs, labels)
+    return loss
 
 
 def get_optimizers(args, model):
@@ -49,22 +48,14 @@ def get_lossfn(args):
 
 def train(args, model, optimizer, loss_fn, dataloader):
     model.train()
-
     epoch_loss = 0.0
-    #  label_idx = ["gender", "age", "mask"].index(args.train_key)
 
     for idx, (images, labels) in enumerate(dataloader):
         optimizer.zero_grad()
 
-        #  labels = labels[label_idx]
         images, labels = images.to(args.device), labels.to(args.device)
 
         outputs = model(images)
-
-        #  if args.train_key == "age":
-        #      output = output.reshape(-1)
-        #
-        #  loss = loss_fn(output, labels)
         loss = get_loss(args, loss_fn, outputs, labels)
 
         loss.backward()
@@ -79,36 +70,23 @@ def evaluate(args, model, loss_fn, dataloader):
     model.eval()
 
     epoch_loss = 0.0
-    #  label_idx = ["gender", "age", "mask"].index(args.train_key)
-
     label_list = torch.tensor([]).to(args.device)
     output_list = torch.tensor([]).to(args.device)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
-
-            #  labels = labels[label_idx]
             images, labels = images.to(args.device), labels.to(args.device)
 
             outputs = model(images)
 
-            #  if args.train_key == "age":
-            #      outputs = change_2d_to_1d(outputs)
-            #  loss = loss_fn(output, labels)
-
             loss = get_loss(args, loss_fn, outputs, labels)
             epoch_loss += loss.item()
 
-            #  if args.train_key == "age":
-            #      labels = change_age_to_cat(labels)
-            #      output = change_age_to_cat(output)
-            #  else:
-
             outputs = torch.argmax(outputs, dim=1)
-            output = change_2d_to_1d(output)
+            outputs = change_2d_to_1d(outputs)
 
             label_list = torch.cat((label_list, labels))
-            output_list = torch.cat((output_list, output))
+            output_list = torch.cat((output_list, outputs))
 
     return epoch_loss / len(dataloader), label_list, output_list
 
@@ -145,7 +123,6 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
             }
         )
 
-        print(type(valid_loss))
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
         print(f"\tValidation Loss: {valid_loss:.3f}")
@@ -153,20 +130,21 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
 
 def main(args):
     wandb.init(project="p-stage-1", reinit=True)
+    print(args)
     wandb.config.update(args)
-    wandb.run.name = f"{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
+    wandb.run.name = f"train-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
     args = wandb.config
 
     train_dataloader, test_dataloader = get_dataloader(args)
 
     num_class = len(get_classes(args.train_key))
-    #  num_class = 1 if args.train_key == "age" else len(classes)
 
     model = ResNetClassification(num_class).to(args.device)
     model.apply(init_weights)
     wandb.watch(model)
-
-    print("wandb.config:\n", wandb.config)
+    
+    print("wandb.config:")
+    print("".join([f"{k:<15} : {v}\n"for k, v in sorted(args.items(), key=len)]))
 
     optimizer = get_optimizers(args, model)
     loss_fn = get_lossfn(args)
