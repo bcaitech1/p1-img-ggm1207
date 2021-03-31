@@ -12,10 +12,10 @@ from config import get_args
 from network import ResNetClassification
 from prepare import get_dataloader, get_classes
 
-from metrics import cal_metrics, cal_accuracy, change_2d_to_1d
+from metrics import cal_metrics, cal_accuracy, change_2d_to_1d, FocalLoss
 from log_helper import plots_result
 
-from torchvision.ops.focal_loss import sigmoid_focal_loss
+#  from torchvision.ops.focal_loss import sigmoid_focal_loss
 
 
 def init_weights(m):
@@ -45,7 +45,8 @@ def get_optimizers(args, model):
 
 
 def get_lossfn(args):
-    loss_fn = nn.CrossEntropyLoss()
+    # loss_fn = nn.CrossEntropyLoss()
+    loss_fn = FocalLoss(gamma=2)
     return loss_fn
 
 

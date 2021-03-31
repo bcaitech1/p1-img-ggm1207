@@ -17,7 +17,8 @@ def get_args():
     parser = argparse.ArgumentParser(description="DCGAN")
 
     pa = partial(parser.add_argument)
-
+    
+    pa("--temp_aug_index", type=int, default=0)
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")
     pa("--filename", type=str, default="valid", help="filename")

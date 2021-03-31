@@ -4,6 +4,7 @@ from PIL import Image
 
 import cv2
 import pandas as pd
+import albumentations as A
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -34,6 +35,29 @@ def get_transforms(args):
 
     return transform
 
+def album_transformation(args, image):
+    trans_fns = [
+        A.CoarseDropout(max_width=50, max_height=50, p=0.5),
+        A.ChannelShuffle(p=0.5),
+        A.ColorJitter(p=0.5),
+        A.Cutout(p=0.5, max_h_size=50, max_w_size=50),
+        A.FancyPCA(alpha=0.5, p=0.5),
+        A.GridDistortion(p=0.5),
+        A.GridDropout(p=0.5),
+        A.HorizontalFlip(p=0.5),
+        A.HueSaturationValue(p=0.5),
+        A.RandomBrightnessContrast(p=0.5),
+        A.RandomGridShuffle(p=0.5),
+        A.ToGray(p=1),
+    ]
+    
+    trans_fn = trans_fns[args.temp_aug_index]
+    image = A.resize(args.image_size, args.image_size)(image=image)['image']
+    image = trans_fn(image=image)['image']
+    image = image.transpose(2, 1, 0)
+
+    return image
+
 
 class MaskDataSet(Dataset):
     def __init__(self, args, is_train=True, transform=None):
@@ -48,10 +72,15 @@ class MaskDataSet(Dataset):
         self.transform = transform
 
     def __getitem__(self, idx):
-        img = Image.open(self.images[idx])
+        #  img = Image.open(self.images[idx])
+        #
+        #  if self.transform:
+        #      img = self.transform(img)
 
-        if self.transform:
-            img = self.transform(img)
+        img = cv2.imread(self.images[idx])
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+
+        img = album_transformation(img)
 
         return img, self.labels[idx][self.label_idx]
 
