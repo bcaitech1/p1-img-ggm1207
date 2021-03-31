@@ -13,6 +13,7 @@ from sklearn.model_selection import StratifiedShuffleSplit
 
 from config import get_args
 
+
 def get_classes(key):
     """ predict하기 위해서는 순서가 중요하다. """
     if key == "mask":
@@ -38,6 +39,7 @@ def get_transforms(args):
 
     return transform
 
+
 def get_album_transforms(args):
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
@@ -60,41 +62,15 @@ def get_album_transforms(args):
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
 
     trans_fn = trans_fns[args.temp_aug_index]
-    transform = A.Compose([
+    transform = A.Compose(
+        [
             A.Resize(args.image_size, args.image_size),
             trans_fn,  # keep uint8
             A.Normalize(mean, std),
-        ])
+        ]
+    )
 
     return transform
-
-
-#  def album_transformation(args, image):
-#      trans_fns = [
-#          A.CoarseDropout(max_width=50, max_height=50, p=0.5),
-#          A.ChannelShuffle(p=0.5),
-#          A.ColorJitter(p=0.5),
-#          A.Cutout(p=0.5, max_h_size=50, max_w_size=50),
-#          A.FancyPCA(alpha=0.5, p=0.5),
-#          A.GridDistortion(p=0.5),
-#          A.GridDropout(p=0.5),
-#          A.HorizontalFlip(p=0.5),
-#          A.HueSaturationValue(p=0.5),
-#          A.RandomBrightnessContrast(p=0.5),
-#          A.RandomGridShuffle(p=0.5),
-#          A.ToGray(p=1),
-#      ]
-#
-#      # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
-#
-#      transform = A.transpose()
-#
-#      trans_fn = trans_fns[args.temp_aug_index]
-#      image = A.resize(args.image_size, args.image_size)(image=image)['image']
-#      image = trans_fn(image=image)['image']
-#      image = image.transpose(2, 1, 0)
-#
-#      return image
 
 
 class MaskDataSet(Dataset):
@@ -115,18 +91,11 @@ class MaskDataSet(Dataset):
         img = Image.open(self.images[idx])
         img = np.array(img)  # time: 16.8463
 
-        #  img = cv2.imread(self.images[idx])
-        #  img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # time: 25.4017
-
-        #  if self.transform:
-        #      img = self.transform(img)
-
         if self.transform:
-            img = self.transform(image=img)['image']
-        
+            img = self.transform(image=img)["image"]
+
         # Share Memory
-        img = np.transpose(img, axes=(1, 2, 0))  # (w, h, c) +> (c, w, h)
-        #  img = album_transformation(self.args, img)
+        img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
 
         return img, self.labels[idx][self.label_idx]
 
@@ -220,4 +189,4 @@ if __name__ == "__main__":
 
     for idx, (images, labels) in enumerate(train_dataloader):
         pass
-    print(time.time()-s_time)
+    print(time.time() - s_time)
