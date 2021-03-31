@@ -1,10 +1,12 @@
 import os
 import time
 import math
+import random
 from datetime import datetime
 
 import wandb
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 
@@ -14,8 +16,6 @@ from prepare import get_dataloader, get_classes
 
 from metrics import cal_metrics, cal_accuracy, change_2d_to_1d, FocalLoss
 from log_helper import plots_result
-
-#  from torchvision.ops.focal_loss import sigmoid_focal_loss
 
 
 def init_weights(m):
@@ -172,6 +172,11 @@ def main(args):
 if __name__ == "__main__":
     args = get_args()
     args.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
+    torch.cuda.manual_seed(args.seed)
 
     print("PyTorch version:[%s]." % (torch.__version__))
     print("This code use [%s]." % (args.device))

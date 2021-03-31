@@ -1,4 +1,6 @@
 import os
+import time
+import numpy as np
 from glob import glob
 from PIL import Image
 
@@ -9,6 +11,7 @@ from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
 from sklearn.model_selection import StratifiedShuffleSplit
 
+from config import get_args
 
 def get_classes(key):
     """ predict하기 위해서는 순서가 중요하다. """
@@ -35,7 +38,10 @@ def get_transforms(args):
 
     return transform
 
-def album_transformation(args, image):
+def get_album_transforms(args):
+    mean = [0.485, 0.456, 0.406]
+    std = [0.229, 0.224, 0.225]
+
     trans_fns = [
         A.CoarseDropout(max_width=50, max_height=50, p=0.5),
         A.ChannelShuffle(p=0.5),
@@ -48,15 +54,47 @@ def album_transformation(args, image):
         A.HueSaturationValue(p=0.5),
         A.RandomBrightnessContrast(p=0.5),
         A.RandomGridShuffle(p=0.5),
-        A.ToGray(p=1),
+        A.ToGray(p=1),  # 12
     ]
-    
-    trans_fn = trans_fns[args.temp_aug_index]
-    image = A.resize(args.image_size, args.image_size)(image=image)['image']
-    image = trans_fn(image=image)['image']
-    image = image.transpose(2, 1, 0)
 
-    return image
+    # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
+
+    trans_fn = trans_fns[args.temp_aug_index]
+    transform = A.Compose([
+            A.Resize(args.image_size, args.image_size),
+            trans_fn,  # keep uint8
+            A.Normalize(mean, std),
+        ])
+
+    return transform
+
+
+#  def album_transformation(args, image):
+#      trans_fns = [
+#          A.CoarseDropout(max_width=50, max_height=50, p=0.5),
+#          A.ChannelShuffle(p=0.5),
+#          A.ColorJitter(p=0.5),
+#          A.Cutout(p=0.5, max_h_size=50, max_w_size=50),
+#          A.FancyPCA(alpha=0.5, p=0.5),
+#          A.GridDistortion(p=0.5),
+#          A.GridDropout(p=0.5),
+#          A.HorizontalFlip(p=0.5),
+#          A.HueSaturationValue(p=0.5),
+#          A.RandomBrightnessContrast(p=0.5),
+#          A.RandomGridShuffle(p=0.5),
+#          A.ToGray(p=1),
+#      ]
+#
+#      # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
+#
+#      transform = A.transpose()
+#
+#      trans_fn = trans_fns[args.temp_aug_index]
+#      image = A.resize(args.image_size, args.image_size)(image=image)['image']
+#      image = trans_fn(image=image)['image']
+#      image = image.transpose(2, 1, 0)
+#
+#      return image
 
 
 class MaskDataSet(Dataset):
@@ -65,6 +103,7 @@ class MaskDataSet(Dataset):
         self.datas = pd.read_csv(csv_file)
         self.images, self.labels = self._load_image_files_path(args, is_train)
         self.label_idx = ["gender", "age", "mask"].index(args.train_key)
+        self.args = args
 
         if args.test:
             self.images, self.labels = self.images[:100], self.labels[:100]
@@ -72,15 +111,22 @@ class MaskDataSet(Dataset):
         self.transform = transform
 
     def __getitem__(self, idx):
-        #  img = Image.open(self.images[idx])
-        #
+
+        img = Image.open(self.images[idx])
+        img = np.array(img)  # time: 16.8463
+
+        #  img = cv2.imread(self.images[idx])
+        #  img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)  # time: 25.4017
+
         #  if self.transform:
         #      img = self.transform(img)
 
-        img = cv2.imread(self.images[idx])
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-        img = album_transformation(img)
+        if self.transform:
+            img = self.transform(image=img)['image']
+        
+        # Share Memory
+        img = np.transpose(img, axes=(1, 2, 0))  # (w, h, c) +> (c, w, h)
+        #  img = album_transformation(self.args, img)
 
         return img, self.labels[idx][self.label_idx]
 
@@ -140,7 +186,7 @@ class MaskDataSet(Dataset):
 
 
 def get_dataloader(args):
-    transform = get_transforms(args)
+    transform = get_album_transforms(args)
 
     train_dataset = MaskDataSet(args, is_train=True, transform=transform)
     valid_dataset = MaskDataSet(args, is_train=False, transform=transform)
@@ -162,3 +208,16 @@ def get_dataloader(args):
     )
 
     return train_dataloader, valid_dataloader
+
+
+if __name__ == "__main__":
+    args = get_args()
+
+    train_dataloader, valid_dataloader = get_dataloader(args)
+    s_time = time.time()
+    for idx, (images, labels) in enumerate(train_dataloader):
+        pass
+
+    for idx, (images, labels) in enumerate(train_dataloader):
+        pass
+    print(time.time()-s_time)

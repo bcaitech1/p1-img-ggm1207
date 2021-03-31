@@ -22,7 +22,6 @@ def get_args():
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")
     pa("--filename", type=str, default="valid", help="filename")
-    pa("--manual_seed", type=int, default=42, help="manual seed")
     pa("--data_dir", type=str, default="/opt/ml/input/data/train")
     pa("--valid_size", type=float, default=0.5, help="valid rate")
     pa("--age_model", type=str, default="age", help="small dataset")
@@ -33,7 +32,7 @@ def get_args():
     pa("--image_size", default=224, type=int, help="the height/width")
     pa("--gender_model", type=str, default="gender", help="small dataset")
     pa("--epochs", type=int, default=25, help="number of epochs to train for")
-    pa("--workers", type=int, default=6, help="number of data loading workers")
+    pa("--workers", type=int, default=3, help="number of data loading workers")
     pa("--lr", type=float, default=0.0002, help="learning rate, default=0.0002")
     pa(
         "--train_key",
