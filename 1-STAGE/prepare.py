@@ -14,7 +14,7 @@ def get_classes(key):
     if key == "mask":
         return ["wear", "incorrect", "not wear"]
     if key == "age":
-        return ["age < 30", "30 <= age < 60", "60 < age"]
+        return ["age < 30", "30 <= age < 60", "60 <= age"]
     if key == "gender":
         return ["male", "female"]
     raise KeyError("key must be in ['mask', 'age', 'gender']")
@@ -40,6 +40,7 @@ class MaskDataSet(Dataset):
         csv_file = os.path.join(args.data_dir, "train.csv")
         self.datas = pd.read_csv(csv_file)
         self.images, self.labels = self._load_image_files_path(args, is_train)
+        self.label_idx = ["gender", "age", "mask"].index(args.train_key)
 
         if args.test:
             self.images, self.labels = self.images[:100], self.labels[:100]
@@ -52,7 +53,8 @@ class MaskDataSet(Dataset):
         if self.transform:
             img = self.transform(img)
 
-        return img, self.labels[idx]
+        #  return img, self.labels[idx]
+        return img, self.labels[idx][self.label_idx]
 
     def __len__(self):
         return len(self.images)
@@ -82,7 +84,16 @@ class MaskDataSet(Dataset):
             image_id, gender_lbl, _, age_lbl = dir_name.split("_")
 
             gender_class = gender_classes.index(gender_lbl)
-            age_class = float(age_lbl)
+
+            # ["age < 30", "30 <= age < 60", "60 <= age"]
+            age_lbl = int(age_lbl)
+
+            if age_lbl < 30:
+                age_class = 0
+            elif age_lbl >= 60:
+                age_class = 2
+            else:
+                age_class = 1
 
             for jpg_filepath in glob(dir_path + "/*"):
                 jpg_basename = os.path.basename(jpg_filepath)

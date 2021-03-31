@@ -1,48 +1,42 @@
 import os
 import argparse
 
+from functools import partial
+
 
 def get_args():
     parser = argparse.ArgumentParser(description="DCGAN")
-    parser.add_argument("--data_dir", type=str, default="/opt/ml/input/data/train")
-    parser.add_argument(
-        "--workers", type=int, default=6, help="number of data loading workers"
-    )
-    parser.add_argument("--batch_size", default=64, type=int, help="input batch size")
-    parser.add_argument(
-        "--image_size",  # 이미지 사이즈를 지정해놓으니 모델 구현하기가 편한다.
-        default=224,
-        type=int,
-        help="the height/width of the input image to network",
-    )
-    parser.add_argument(
-        "--epochs", type=int, default=25, help="number of epochs to train for"
-    )
-    parser.add_argument("--valid_size", type=float, default=0.2, help="valid rate")
-    parser.add_argument("--filename", type=str, default="valid", help="filename")
-    parser.add_argument("--seed", type=int, default=42, help="random seed")
-    parser.add_argument(
-        "--lr", type=float, default=0.0002, help="learning rate, default=0.0002"
-    )
-    parser.add_argument(
+
+    pa = partial(pa)
+
+    pa("--seed", type=int, default=42, help="random seed")
+    pa("--test", type=bool, default=True, help="small dataset")
+    pa("--filename", type=str, default="valid", help="filename")
+    pa("--manual_seed", type=int, default=42, help="manual seed")
+    pa("--data_dir", type=str, default="/opt/ml/input/data/train")
+    pa("--valid_size", type=float, default=0.2, help="valid rate")
+    pa("--age_model", type=str, default="age", help="small dataset")
+    pa("--optimizer", type=str, default="adam", help="small dataset")
+    pa("--batch_size", default=64, type=int, help="input batch size")
+    pa("--mask_model", type=str, default="mask", help="small dataset")
+    pa("--image_size", default=224, type=int, help="the height/width")
+    pa("--gender_model", type=str, default="gender", help="small dataset")
+    pa("--epochs", type=int, default=25, help="number of epochs to train for")
+    pa("--workers", type=int, default=6, help="number of data loading workers")
+    pa("--lr", type=float, default=0.0002, help="learning rate, default=0.0002")
+    pa(
         "--train_key",
         type=str,
         default="mask",
         help="split key in ['gender', 'age', 'mask']",
     )
-    parser.add_argument(
+    pa(
         "--model_path",
         type=str,
         default="/opt/ml/weights/",
         help="path of model's weights",
     )
-    parser.add_argument("--manual_seed", type=int, default=42, help="manual seed")
-    parser.add_argument("--test", type=bool, default=True, help="small dataset")
-    parser.add_argument("--optimizer", type=str, default="adam", help="small dataset")
-    parser.add_argument("--age_model", type=str, default="age", help="small dataset")
-    parser.add_argument("--gender_model", type=str, default="gender", help="small dataset")
-    parser.add_argument("--mask_model", type=str, default="mask", help="small dataset")
-    
+
     # args = [] 주면 sweep 작동 안함...
     args, unknown = parser.parse_known_args()
 
