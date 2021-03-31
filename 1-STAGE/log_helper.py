@@ -53,7 +53,7 @@ def plots_result(args, images, outputs, labels):
 
     num_rows = num_cols = int(len(images) ** 0.5)
     num_images = num_rows * num_cols
-    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols * 2, figsize=(36, 36))
+    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols * 2, figsize=(72, 36))
     plt.setp(axes, xticks=[], yticks=[])
 
     for idx in range(num_images):

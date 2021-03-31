@@ -15,6 +15,8 @@ from prepare import get_dataloader, get_classes
 from metrics import cal_metrics, cal_accuracy, change_2d_to_1d
 from log_helper import plots_result
 
+from torchvision.ops.focal_loss import sigmoid_focal_loss
+
 
 def init_weights(m):
     for name, param in m.named_parameters():
@@ -131,6 +133,9 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
     train_images, train_labels = next(iter(train_dataloader))
     test_images, test_labels = next(iter(test_dataloader))
 
+    train_images, train_labels = train_images.to(args.device), train_labels.to(args.device)
+    test_images, test_labels = test_images.to(args.device), test_labels.to(args.device)
+
     train_outputs = model(train_images)
     test_outputs = model(test_images)
 
@@ -142,9 +147,8 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
 
 def main(args):
     wandb.init(project="p-stage-1", reinit=True)
-    print(args)
     wandb.config.update(args)
-    wandb.run.name = f"train-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
+    wandb.run.name = f"{args.train_key}-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
     args = wandb.config
 
     train_dataloader, test_dataloader = get_dataloader(args)
