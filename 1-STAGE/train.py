@@ -12,7 +12,8 @@ from config import get_args
 from network import ResNetClassification
 from prepare import get_dataloader, get_classes
 
-from metrics import change_age_to_cat, cal_metrics, cal_accuracy, change_2d_to_1d
+from metrics import cal_metrics, cal_accuracy, change_2d_to_1d
+from log_helper import plots_result
 
 
 def init_weights(m):
@@ -117,8 +118,8 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
             {
                 "train_loss": train_loss,
                 "valid_loss": valid_loss,
-                "f1_score": f1_sco,
-                "accuracy": acc,
+                "valid_f1_score": f1_sco,
+                "valid_accuracy": acc,
                 "epoch": epoch,
             }
         )
@@ -126,6 +127,17 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
         print(f"\tValidation Loss: {valid_loss:.3f}")
+
+    train_images, train_labels = next(iter(train_dataloader))
+    test_images, test_labels = next(iter(test_dataloader))
+
+    train_outputs = model(train_images)
+    test_outputs = model(test_images)
+
+    fig1 = plots_result(args, train_images, train_outputs, train_labels)
+    fig2 = plots_result(args, test_images, test_outputs, test_labels)
+
+    wandb.log({"train result": fig1, "test result": fig2})
 
 
 def main(args):
@@ -142,9 +154,9 @@ def main(args):
     model = ResNetClassification(num_class).to(args.device)
     model.apply(init_weights)
     wandb.watch(model)
-    
+
     print("wandb.config:")
-    print("".join([f"{k:<15} : {v}\n"for k, v in sorted(args.items(), key=len)]))
+    print("".join([f"{k:<15} : {v}\n" for k, v in sorted(args.items(), key=len)]))
 
     optimizer = get_optimizers(args, model)
     loss_fn = get_lossfn(args)
