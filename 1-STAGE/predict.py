@@ -6,25 +6,59 @@ import torch
 import pandas as pd
 import torch.nn as nn
 
-from train import evaluate
+from train import evaluate, get_lossfn
 from config import get_args
 from prepare import get_dataloader, get_transforms
-from metrics import change_2d_to_1d, change_age_to_cat, cal_metrics, cal_accuracy
+from metrics import (
+    change_2d_to_1d,
+    change_age_to_cat,
+    cal_metrics,
+    cal_accuracy,
+    FocalLoss,
+)
 
 
 def eval_class(mi, gi, ai):
     return 6 * mi + 3 * gi + ai
 
 
+def _log_scores_to_df(args, summary_table, key, model, loss_fn, data_loader):
+    args.train_key = key
+    _, labels, outputs = evaluate(args, model, loss_fn, data_loader)
+
+    f1_score = cal_metrics(outputs, labels)
+    acc_score = cal_accuracy(outputs, labels)
+
+    summary_table.loc[key] = [f1_score, acc_score]
+
+    return labels, outputs
+
+
+def log_scores_to_df(args, summary_table, keys, models, data_loader):
+    """ loss_fn: use same model """
+
+    label_list, output_list = [], []
+
+    for model, key in zip(models, keys):
+        args.train_key = key
+        loss_fn = get_lossfn(args)
+
+        labels, outputs = _log_scores_to_df(
+            args, summary_table, key, model, loss_fn, data_loader
+        )
+
+        label_list.append(labels.detach().cpu().numpy())
+        output_list.append(outputs.detach().cpu().numpy())
+
+    return label_list, output_list
+
+
 def main(args):
+    print("".join([f"{k:<15} : {v}\n" for k, v in sorted(args.items(), key=len)]))
+
     wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
     wandb.run.name = f"predict-{wandb.run.name}"
-
-    mse_loss = nn.MSELoss()
-    cro_loss = nn.CrossEntropyLoss()
-
-    print(args)
 
     try:
         age_model = torch.load(args.age_model)
@@ -44,67 +78,28 @@ def main(args):
     eval_dir = "/opt/ml/input/data/eval/"
     eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
 
-    summary_df = pd.DataFrame(columns=["f1_score", "accuracy"])
+    summary_table = pd.DataFrame(columns=["f1_score", "accuracy"])
 
-    args.train_key = "age"
-    _, label_list, output_list = evaluate(args, age_model, mse_loss, valid_dataloader)
-    f1_sco = cal_metrics(output_list, label_list)
-    acc = cal_accuracy(output_list, label_list)
-    summary_df.loc["age"] = [f1_sco, acc]
+    keys = ["mask", "gender", "age"]
+    models = [mask_model, gender_model, age_model]
 
-    age_label, age_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
-
-    args.train_key = "gender"
-    _, label_list, output_list = evaluate(
-        args, gender_model, cro_loss, valid_dataloader
+    # mga: mask, gender, age (sequence)
+    mga_label_lists, mga_output_lists = log_scores_to_df(
+        args, summary_table, keys, models, valid_dataloader
     )
-    f1_sco = cal_metrics(output_list, label_list)
-    acc = cal_accuracy(output_list, label_list)
-    summary_df.loc["gender"] = [f1_sco, acc]
 
-    gen_label, gen_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
+    labels, outputs = [], []
 
-    args.train_key = "mask"
-    _, label_list, output_list = evaluate(args, mask_model, cro_loss, valid_dataloader)
-    f1_sco = cal_metrics(output_list, label_list)
-    acc = cal_accuracy(output_list, label_list)
-    summary_df.loc["mask"] = [f1_sco, acc]
-
-    mask_label, mask_pred = label_list.cpu().numpy(), output_list.cpu().numpy()
-
-    labels = []
-    outputs = []
-
-    for mi, gi, ai in zip(mask_label, gen_label, age_label):
+    for mi, gi, ai in zip(mga_label_lists):
         labels.append(eval_class(mi, gi, ai))
 
-    for mi, gi, ai in zip(mask_pred, gen_pred, age_pred):
+    for mi, gi, ai in zip(mga_output_lists):
         outputs.append(eval_class(mi, gi, ai))
 
     acc = cal_accuracy(torch.tensor(labels), torch.tensor(outputs))
-    table = wandb.Table(dataframe=summary_df, rows=['age', 'gender', 'mask'])
-
-    #  for idx, image_base_path in enumerate(eval_df["ImageID"]):
-    #      image_full_path = os.path.join(eval_dir, "images", image_base_path)
-    #      image = Image.open(image_full_path)
-    #      image = transform(image).unsqueeze(0).cuda()
-    #
-    #      age_label = age_model(image)
-    #      gender_label = gender_model(image)
-    #      mask_label = mask_model(image)
-    #
-    #      age_class = change_age_to_cat(age_label[0])
-    #      gender_class = torch.argmax(gender_label, dim=1)
-    #      mask_class = torch.argmax(mask_label, dim=1)
-    #
-    #      res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
-    #      eval_df.iloc[idx, 1] = res
+    table = wandb.Table(dataframe=summary_table, rows=keys)
 
     wandb.log({"Result": table, "valid_accuracy": acc})
-
-    #  sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
-    #  sub_path = os.path.join(sub_path, f"{wandb.run.name}.csv")
-    #  eval_df.to_csv(sub_path)
 
 
 if __name__ == "__main__":
