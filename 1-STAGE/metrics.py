@@ -20,14 +20,12 @@ def change_age_to_cat(age_logit):
 
 
 def cal_metrics(pred, label, score_fn=f1_score):
-    pred = pred.detach().cpu().numpy()
-    label = label.detach().cpu().numpy()
+    """ pred, label: numpy array"""
     return score_fn(pred, label, average="macro")
 
 
 def cal_accuracy(pred, label):
-    pred = pred.detach().cpu().numpy()
-    label = label.detach().cpu().numpy()
+    """ Numpy array 임  """
     return accuracy_score(pred, label)
 
 

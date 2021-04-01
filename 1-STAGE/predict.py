@@ -27,9 +27,6 @@ def eval_class(mi, gi, ai):
 
 
 def _log_f1_and_acc_scores(args, summary_table, labels, outputs):
-    args.train_key = key
-    _, labels, outputs = evaluate(args, model, loss_fn, data_loader)
-
     # class 별 f1_score를 계산해야함.
 
     f1_score = cal_metrics(outputs, labels)
@@ -39,8 +36,10 @@ def _log_f1_and_acc_scores(args, summary_table, labels, outputs):
 
     return labels, outputs
 
+
 def _log_confusion_matrix(args, labels, outputs):
-    return 
+    return
+
 
 def _log_():
     return
@@ -57,12 +56,12 @@ def log_scores(args, keys, models):
     for model, key in zip(models, keys):
         args.train_key = key
         _, valid_dataloader = get_dataloader(args)
-        
+
         labels, outputs = evaluate(args, model, loss_fn, valid_dataloader)
+        labels, outputs = labels.detach().cpu().numpy(), outputs.detach().cpu().numpy()
 
         _log_f1_and_acc_scores(args, summary_table, labels, outputs)
         _log_confusion_matrix(args, labels, outputs)
-
 
         label_list.append(labels.detach().cpu().numpy())
         output_list.append(outputs.detach().cpu().numpy())
@@ -81,7 +80,7 @@ def load_models(args):
         mask_model.eval()
     except Exception as e:
         raise e
-    
+
     return [mask_model, gender_model, age_model]  # 순서 중요
 
 
@@ -90,7 +89,9 @@ def main(args):
     wandb.config.update(args)
     wandb.run.name = f"predict-{wandb.run.name}"
 
-    print("".join([f"{k:<15} : {v}\n" for k, v in sorted(wandb.config.items(), key=len)]))
+    print(
+        "".join([f"{k:<15} : {v}\n" for k, v in sorted(wandb.config.items(), key=len)])
+    )
 
     models = load_models(args)
     keys = ["mask", "gender", "age"]

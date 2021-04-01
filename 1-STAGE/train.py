@@ -81,7 +81,7 @@ def evaluate(args, model, loss_fn, dataloader):
             images, labels = images.to(args.device), labels.to(args.device)
 
             outputs = model(images)
-            
+
             loss = get_loss(args, loss_fn, outputs, labels)
             epoch_loss += loss.item()
 
@@ -113,6 +113,9 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
+        output_list = output_list.detach().cpu().numpy()
+        label_list = label_list.detach().cpu().numpy()
+
         f1_sco = cal_metrics(output_list, label_list)
         acc = cal_accuracy(output_list, label_list)
 
@@ -133,7 +136,9 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
     train_images, train_labels = next(iter(train_dataloader))
     test_images, test_labels = next(iter(test_dataloader))
 
-    train_images, train_labels = train_images.to(args.device), train_labels.to(args.device)
+    train_images, train_labels = train_images.to(args.device), train_labels.to(
+        args.device
+    )
     test_images, test_labels = test_images.to(args.device), test_labels.to(args.device)
 
     train_outputs = model(train_images)
@@ -148,7 +153,9 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
 def main(args):
     wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
-    wandb.run.name = f"{args.train_key}-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
+    wandb.run.name = (
+        f"{args.train_key}-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
+    )
     args = wandb.config
 
     train_dataloader, test_dataloader = get_dataloader(args)
@@ -171,7 +178,7 @@ def main(args):
 if __name__ == "__main__":
     args = get_args()
     args.device = "cuda:0" if torch.cuda.is_available() else "cpu"
-        
+
     random.seed(args.seed)
     np.random.seed(args.seed)
     torch.manual_seed(args.seed)
