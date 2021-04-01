@@ -1,5 +1,5 @@
 program: train.py
-name: Age-Transform-Experiments
+name: Mask-Transform-Experiments
 method: grid
 metric:
     goal: minimize
@@ -28,7 +28,7 @@ parameters:
         value: "adamw"
     train_key:
         distribution: constant
-        value: "age"
+        value: "mask"
     temp_aug_index:
         distribution: categorical
         values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]

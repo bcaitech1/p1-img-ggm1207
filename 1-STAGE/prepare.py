@@ -62,7 +62,7 @@ def get_album_transforms(args):
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
 
     trans_fn = trans_fns[args.temp_aug_index]
-    transform = A.Compose(
+    train_transform = A.Compose(
         [
             A.Resize(args.image_size, args.image_size),
             trans_fn,  # keep uint8
@@ -70,7 +70,14 @@ def get_album_transforms(args):
         ]
     )
 
-    return transform
+    test_transform = A.Compose(
+        [
+            A.Resize(args.image_size, args.image_size),
+            A.Normalize(mean, std),
+        ]
+    )
+
+    return train_transform, test_transform
 
 
 class MaskDataSet(Dataset):
@@ -155,10 +162,10 @@ class MaskDataSet(Dataset):
 
 
 def get_dataloader(args):
-    transform = get_album_transforms(args)
+    train_transform, test_transform = get_album_transforms(args)
 
-    train_dataset = MaskDataSet(args, is_train=True, transform=transform)
-    valid_dataset = MaskDataSet(args, is_train=False, transform=transform)
+    train_dataset = MaskDataSet(args, is_train=True, transform=train_transform)
+    valid_dataset = MaskDataSet(args, is_train=False, transform=test_transform)
 
     train_dataloader = DataLoader(
         train_dataset,
