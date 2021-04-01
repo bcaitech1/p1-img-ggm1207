@@ -1,3 +1,5 @@
+""" 모델을 Load한 후 전체 데이터에 대해서 다시 학습 한 후 Inference 실행 """
+
 import os
 from PIL import Image
 

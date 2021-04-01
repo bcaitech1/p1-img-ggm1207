@@ -31,8 +31,7 @@ def epoch_time(start_time, end_time):
 
 
 def get_loss(args, loss_fn, outputs, labels):
-    loss = loss_fn(outputs, labels)
-    return loss
+    return loss_fn(outputs, labels)
 
 
 def get_optimizers(args, model):
@@ -46,7 +45,7 @@ def get_optimizers(args, model):
 
 def get_lossfn(args):
     # loss_fn = nn.CrossEntropyLoss()
-    loss_fn = FocalLoss(gamma=2)
+    loss_fn = FocalLoss(gamma=2).to(args.device)
     return loss_fn
 
 
@@ -82,7 +81,7 @@ def evaluate(args, model, loss_fn, dataloader):
             images, labels = images.to(args.device), labels.to(args.device)
 
             outputs = model(images)
-
+            
             loss = get_loss(args, loss_fn, outputs, labels)
             epoch_loss += loss.item()
 

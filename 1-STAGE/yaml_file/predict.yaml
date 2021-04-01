@@ -13,4 +13,3 @@ parameters:
         values: ['03302213-frosty-sweep-5', '03310033-celestial-sweep-9', '03302126-zesty-sweep-4']
     mask_model:
         values: ['mask']
-        
