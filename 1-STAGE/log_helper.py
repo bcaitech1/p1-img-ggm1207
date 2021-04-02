@@ -5,6 +5,9 @@ import matplotlib.pyplot as plt
 
 from prepare import get_classes
 
+def log_plots(args, images, labels, outputs):
+    pass
+
 
 def plot_image(ax, image, output, pred_label, true_label, classes):
     ax.grid(False)
@@ -49,11 +52,11 @@ def plots_result(args, images, outputs, labels):
     images = np.clip((images * STD) + MEAN, 0, 1)  # 0 ~ 1
     images = images.transpose(0, 2, 3, 1)  # (batch, width, height, channel)
 
-    classes = get_classes(args.train_key)
+    classes = get_classes(args)
 
     num_rows = num_cols = int(len(images) ** 0.5)
     num_images = num_rows * num_cols
-    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols * 2, figsize=(72, 36))
+    fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols * 2, figsize=(36, 18))
     plt.setp(axes, xticks=[], yticks=[])
 
     for idx in range(num_images):

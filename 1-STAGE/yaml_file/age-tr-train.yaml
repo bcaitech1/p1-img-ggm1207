@@ -1,6 +1,6 @@
 program: train.py
-name: Gender-Transform-Experiments
-method: grid
+name: AGE-HyperParamter-Tuning
+method: random
 metric:
     goal: minimize
     name: valid_loss
@@ -13,22 +13,22 @@ parameters:
         value: False
     epochs:
         distribution: constant
-        value: 20
+        value: 30
     batch_size:
         distribution: constant
         value: 64
     lr:
-        distribution: constant
-        value: 0.0001
+        min: 0.0005
+        max: 0.002
     seed:
         distribution: constant
         value: 42
     optimizer:
-        distribution: constant
-        value: "adamw"
+        distribution: categorical
+        values: ["adamw", "adam", "sgd"]
     train_key:
         distribution: constant
-        value: "gender"
-    temp_aug_index:
-        distribution: categorical
-        values: [9, 10, 11]
+        value: "age"
+    aug_indexs:
+        distribution: constant
+        value: "1,2,3,4,5,6,7,8,9,10"

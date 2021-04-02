@@ -14,13 +14,13 @@ from sklearn.model_selection import StratifiedShuffleSplit
 from config import get_args
 
 
-def get_classes(key):
+def get_classes(args):
     """ predict하기 위해서는 순서가 중요하다. """
-    if key == "mask":
+    if args.train_key == "mask":
         return ["wear", "incorrect", "not wear"]
-    if key == "age":
+    if args.train_key == "age":
         return ["age < 30", "30 <= age < 60", "60 <= age"]
-    if key == "gender":
+    if args.train_key == "gender":
         return ["male", "female"]
     raise KeyError("key must be in ['mask', 'age', 'gender']")
 
@@ -45,27 +45,29 @@ def get_album_transforms(args):
     std = [0.229, 0.224, 0.225]
 
     trans_fns = [
-        A.CoarseDropout(max_width=50, max_height=50, p=0.5),
-        A.ChannelShuffle(p=0.5),
-        A.ColorJitter(p=0.5),
-        A.Cutout(p=0.5, max_h_size=50, max_w_size=50),
-        A.FancyPCA(alpha=0.5, p=0.5),
-        A.GridDistortion(p=0.5),
-        A.GridDropout(p=0.5),
-        A.HorizontalFlip(p=0.5),
-        A.HueSaturationValue(p=0.5),
-        A.RandomBrightnessContrast(p=0.5),
-        A.RandomGridShuffle(p=0.5),
-        A.ToGray(p=1),  # 12
+        A.CoarseDropout(max_width=20, max_height=100, p=0.1),
+        A.ChannelShuffle(p=0.1),
+        A.ColorJitter(p=0.1),
+        A.Cutout(p=0.1, max_h_size=50, max_w_size=50),
+        A.FancyPCA(alpha=0.1, p=0.1),
+        A.GridDistortion(p=0.1),
+        A.GridDropout(p=0.1),
+        A.HorizontalFlip(p=0.1),
+        A.HueSaturationValue(p=0.1),
+        A.RandomBrightnessContrast(p=0.1),
+        A.RandomGridShuffle(p=0.1),
+        A.ToGray(p=0.1),  # 12
     ]
 
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
 
-    trans_fn = trans_fns[args.temp_aug_index]
+    new_trans_fns = [trans_fns[int(aug_idx)] for aug_idx in args.aug_indexs.split(",")]
+
+    #  trans_fn = trans_fns[args.temp_aug_index]
     train_transform = A.Compose(
         [
             A.Resize(args.image_size, args.image_size),
-            trans_fn,  # keep uint8
+            *new_trans_fns, # keep uint8
             A.Normalize(mean, std),
         ]
     )
@@ -123,7 +125,7 @@ class MaskDataSet(Dataset):
             valid_dataset = self.datas.loc[valid_index]
 
         dataset = train_dataset if is_train else valid_dataset
-        gender_classes = get_classes("gender")
+        gender_classes = ["male", "female"]
 
         images = []
         labels = []

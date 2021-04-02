@@ -18,7 +18,7 @@ def get_args():
 
     pa = partial(parser.add_argument)
     
-    pa("--temp_aug_index", type=int, default=0)
+    pa("--aug_indexs", type=str, default="0,1,2")
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")
     pa("--filename", type=str, default="valid", help="filename")
@@ -32,7 +32,7 @@ def get_args():
     pa("--image_size", default=224, type=int, help="the height/width")
     pa("--gender_model", type=str, default="gender", help="small dataset")
     pa("--epochs", type=int, default=25, help="number of epochs to train for")
-    pa("--workers", type=int, default=3, help="number of data loading workers")
+    pa("--workers", type=int, default=2, help="number of data loading workers")
     pa("--lr", type=float, default=0.0002, help="learning rate, default=0.0002")
     pa(
         "--train_key",

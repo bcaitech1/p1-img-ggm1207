@@ -160,7 +160,7 @@ def main(args):
 
     train_dataloader, test_dataloader = get_dataloader(args)
 
-    num_class = len(get_classes(args.train_key))
+    num_class = len(get_classes(args))
 
     model = ResNetClassification(num_class).to(args.device)
     model.apply(init_weights)
