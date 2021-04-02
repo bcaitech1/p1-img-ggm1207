@@ -14,7 +14,13 @@ from config import get_args
 from network import ResNetClassification
 from prepare import get_dataloader, get_classes
 
-from metrics import cal_metrics, cal_accuracy, change_2d_to_1d, FocalLoss
+from metrics import (
+    FocalLoss,
+    change_2d_to_1d,
+    tensor_to_numpy,
+    tensor_images_to_numpy_images,
+)
+
 from log_helper import plots_result
 
 
@@ -73,25 +79,26 @@ def evaluate(args, model, loss_fn, dataloader):
     model.eval()
 
     epoch_loss = 0.0
-    label_list = torch.tensor([]).to(args.device)
-    output_list = torch.tensor([]).to(args.device)
+
+    all_labels = torch.tensor([]).to(args.device)
+    all_preds = torch.tensor([]).to(args.device)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
             images, labels = images.to(args.device), labels.to(args.device)
 
-            outputs = model(images)
+            preds = model(images)
 
-            loss = get_loss(args, loss_fn, outputs, labels)
+            loss = get_loss(args, loss_fn, preds, labels)
             epoch_loss += loss.item()
 
-            outputs = torch.argmax(outputs, dim=1)
-            outputs = change_2d_to_1d(outputs)
+            preds = torch.argmax(preds, dim=1)
+            preds = change_2d_to_1d(preds)
 
-            label_list = torch.cat((label_list, labels))
-            output_list = torch.cat((output_list, outputs))
+            all_labels = torch.cat((all_labels, labels))
+            all_preds = torch.cat((all_preds, preds))
 
-    return epoch_loss / len(dataloader), label_list, output_list
+    return epoch_loss / len(dataloader), all_labels, all_preds
 
 
 def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
@@ -113,8 +120,8 @@ def run(args, model, optimizer, loss_fn, train_dataloader, test_dataloader):
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
-        output_list = output_list.detach().cpu().numpy()
-        label_list = label_list.detach().cpu().numpy()
+        output_list = tensor_to_numpy(output_list)
+        label_list = tensor_to_numpy(label_list)
 
         f1_sco = cal_metrics(output_list, label_list)
         acc = cal_accuracy(output_list, label_list)

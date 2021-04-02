@@ -1,8 +1,12 @@
 import torch
+import numpy as np
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn.metrics import accuracy_score, f1_score
+
+MEAN = np.array([0.485, 0.456, 0.406]).reshape(-1, 1, 1)
+STD = np.array([0.229, 0.224, 0.225]).reshape(-1, 1, 1)
 
 
 def change_2d_to_1d(tens):
@@ -11,22 +15,26 @@ def change_2d_to_1d(tens):
     return tens
 
 
-def change_age_to_cat(age_logit):
-    """ age_logit: 1d tensor """
-    age_logit = torch.where(age_logit < 30, torch.zeros_like(age_logit), age_logit)
-    age_logit = torch.where(age_logit >= 60, torch.ones_like(age_logit) * 2, age_logit)
-    age_logit = torch.where(age_logit >= 30, torch.ones_like(age_logit), age_logit)
-    return age_logit.type(torch.long)
+#  def change_age_to_cat(age_logit):
+#      """ age_logit: 1d tensor """
+#      age_logit = torch.where(age_logit < 30, torch.zeros_like(age_logit), age_logit)
+#      age_logit = torch.where(age_logit >= 60, torch.ones_like(age_logit) * 2, age_logit)
+#      age_logit = torch.where(age_logit >= 30, torch.ones_like(age_logit), age_logit)
+#      return age_logit.type(torch.long)
 
 
-def cal_metrics(pred, label, score_fn=f1_score):
-    """ pred, label: numpy array"""
-    return score_fn(pred, label, average="macro")
+def calulate_18class(mi, gi, ai):
+    return 6 * mi + 3 * gi + ai
 
 
-def cal_accuracy(pred, label):
-    """ Numpy array 임  """
-    return accuracy_score(pred, label)
+def tensor_images_to_numpy_images(images):
+    images = images.detach().cpu().numpy()
+    images = np.clip((images * STD) + MEAN, 0, 1)
+    return images
+
+
+def tensor_to_numpy(tensors):
+    return tensors.detach().cpu().numpy()
 
 
 class FocalLoss(nn.Module):

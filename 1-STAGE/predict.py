@@ -1,5 +1,3 @@
-""" 모델의 다양한 성능을 측정  """
-
 import os
 from PIL import Image
 
@@ -9,78 +7,75 @@ import pandas as pd
 import torch.nn as nn
 
 import matplotlib.pyplot as plt
-from sklearn.metrics import f1_score, precision_score, recall_score, accuracy_score, confusion_matrix
-
-from train import evaluate, get_lossfn
-from config import get_args
-from prepare import get_dataloader, get_transforms, get_classes
-from metrics import (
-    change_2d_to_1d,
-    change_age_to_cat,
-    cal_metrics,
-    cal_accuracy,
-    FocalLoss,
+from sklearn.metrics import (
+    f1_score,
+    recall_score,
+    accuracy_score,
+    precision_score,
+    confusion_matrix,
 )
 
-
-def eval_class(mi, gi, ai):
-    return 6 * mi + 3 * gi + ai
-
-
-def _log_f1_and_acc_scores(args, summary_table, labels, outputs):
-    # class 별 f1_score를 계산해야함.
-
-    classes = get_classes(args)
-    
-    for class_idx in range(len(classes)):
-        fancy_index = np.where(labels == class_idx)
-
-        f1 = f1_score(labels[fancy_idx], outputs[fancy_idx], average='macro')
-        pr = precision_score(labels[fancy_idx], outputs[fancy_idx], average='macro')
-        re = recall_score(labels[fancy_idx], outputs[fancy_idx], average='macro')
-        acc = accuracy_score(labels[fancy_idx], outputs[fancy_idx])
-        
-        summary_table.loc[args.train_key, f"{class_idx} f1"] = f1
-        summary_table.loc[args.train_key, f"{class_idx} pr"] = pr
-        summary_table.loc[args.train_key, f"{class_idx} re"] = re
-        summary_table.loc[args.train_key, f"{class_idx} acc"] = acc
-
-def _log_confusion_matrix(args, labels, outputs):
-    classes = get_classes(args)
-
-    cf_matrix = confusion_matrix(outputs, labels)
-    row_sums = 
-     
-
-    return
+from config import get_args
+from train import get_lossfn
+from prepare import get_dataloader, get_transforms, get_classes
+from metrics import (
+    FocalLoss,
+    change_2d_to_1d,
+    calulate_18class,
+    tensor_to_numpy,
+    tensor_images_to_numpy_images,
+)
+from log_helper import log_f1_and_acc_scores, log_confusion_matrix
 
 
-def _log_():
-    return
+def predict(args, model, dataloader):
+    model.eval()
+
+    all_images = torch.tensor([]).to(args.device)
+    all_labels = torch.tensor([]).to(args.device)
+    all_preds = torch.tensor([]).to(args.device)
+
+    with torch.no_grad():
+        for idx, (images, labels) in enumerate(dataloader):
+            images, labels = images.to(args.device), labels.to(args.device)
+
+            preds = model(images)
+            preds = torch.argmax(preds, dim=1)
+            preds = change_2d_to_1d(preds)
+
+            all_images = torch.cat((all_images, images))
+            all_labels = torch.cat((all_labels, labels))
+            all_preds = torch.cat((all_preds, preds))
+
+    return all_images, all_labels, all_preds
 
 
-def log_scores(args, keys, models):
+def predict_and_logs_by_class_with_all_models(args, keys, models):
     """ loss_fn: use same model """
 
-    label_list, output_list = [], []
+    final_zip_labels, final_zip_preds = [], []
     loss_fn = get_lossfn(args).to(args.device)
 
     summary_table = pd.DataFrame([])
 
     for model, key in zip(models, keys):
+        # mask, age, gender
         args.train_key = key
         _, valid_dataloader = get_dataloader(args)
 
-        labels, outputs = evaluate(args, model, loss_fn, valid_dataloader)
-        labels, outputs = labels.detach().cpu().numpy(), outputs.detach().cpu().numpy()
+        all_images, all_labels, all_preds = predict(args, model, valid_dataloader)
 
-        _log_f1_and_acc_scores(args, summary_table, labels, outputs)
-        _log_confusion_matrix(args, labels, outputs)
+        all_images = tensor_images_to_numpy_images(all_images)
+        all_labels = tensor_to_numpy(all_labels)
+        all_preds = tensor_to_numpy(all_preds)
 
-        label_list.append(labels.detach().cpu().numpy())
-        output_list.append(outputs.detach().cpu().numpy())
+        log_f1_and_acc_scores(args, summary_table, all_labels, all_preds)
+        fig = log_confusion_matrix(args, all_labels, all_preds)
 
-    return summary_table, label_list, output_list
+        final_zip_labels.append(all_labels)
+        final_zip_preds.append(all_preds)
+
+    return summary_table, final_zip_labels, final_zip_preds
 
 
 def load_models(args):
@@ -118,10 +113,10 @@ def main(args):
     labels, outputs = [], []
 
     for (mi, gi, ai) in zip(*mga_label_lists):
-        labels.append(eval_class(mi, gi, ai))
+        labels.append(calulate_18class(mi, gi, ai))
 
     for (mi, gi, ai) in zip(*mga_output_lists):
-        outputs.append(eval_class(mi, gi, ai))
+        outputs.append(calulate_18class(mi, gi, ai))
 
     acc = cal_accuracy(torch.tensor(labels), torch.tensor(outputs))
     table = wandb.Table(dataframe=summary_table, rows=keys)
