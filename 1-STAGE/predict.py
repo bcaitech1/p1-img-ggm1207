@@ -28,7 +28,7 @@ from metrics import (
 from log_helper import log_f1_and_acc_scores, log_confusion_matrix
 
 
-def predict(args, model, dataloader):
+def get_all_datas(args, model, dataloader):
     model.eval()
 
     all_images = torch.tensor([]).to(args.device)
@@ -56,7 +56,8 @@ def predict_and_logs_by_class_with_all_models(args, keys, models):
     final_zip_labels, final_zip_preds = [], []
     loss_fn = get_lossfn(args).to(args.device)
 
-    summary_table = pd.DataFrame([])
+    summary_tables = pd.DataFrame([])
+    cf_images = []
 
     for model, key in zip(models, keys):
         # mask, age, gender
@@ -69,13 +70,15 @@ def predict_and_logs_by_class_with_all_models(args, keys, models):
         all_labels = tensor_to_numpy(all_labels)
         all_preds = tensor_to_numpy(all_preds)
 
-        log_f1_and_acc_scores(args, summary_table, all_labels, all_preds)
+        summary_table = log_f1_and_acc_scores(args, all_labels, all_preds)
+        summary_tables = summary_tables.append(summary_table)
         fig = log_confusion_matrix(args, all_labels, all_preds)
+        cf_images.append(wandb.Plotly(fig))
 
         final_zip_labels.append(all_labels)
         final_zip_preds.append(all_preds)
 
-    return summary_table, final_zip_labels, final_zip_preds
+    return summary_tables, final_zip_labels, final_zip_preds
 
 
 def load_models(args):

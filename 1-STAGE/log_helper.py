@@ -1,5 +1,6 @@
 import itertools
 import numpy as np
+import pandas as pd
 
 import torch.nn.functional as F
 import matplotlib.pyplot as plt
@@ -14,10 +15,11 @@ from sklearn.metrics import (
 )
 
 
-def log_f1_and_acc_scores(args, summary_table, labels, outputs):
+def log_f1_and_acc_scores(args, labels, outputs):
     # class 별 f1_score를 계산해야함.
 
     classes = get_classes(args)
+    summary_table = pd.DataFrame([])
 
     for class_idx in range(len(classes)):
         fancy_idx = np.where(labels == class_idx)
@@ -31,6 +33,8 @@ def log_f1_and_acc_scores(args, summary_table, labels, outputs):
         summary_table.loc[args.train_key, f"{class_idx} pr"] = pr
         summary_table.loc[args.train_key, f"{class_idx} re"] = re
         summary_table.loc[args.train_key, f"{class_idx} acc"] = acc
+
+    return summary_table
 
 
 def log_confusion_matrix(args, labels, preds):
@@ -83,16 +87,41 @@ def log_confusion_matrix(args, labels, preds):
     return fig
 
 
-def log_plots(args, images, labels, outputs):
-    pass
+def _log_confusion_matrix_by_images(args, ax, instances, images_per_row=10):
+    ax.grid(False)
+    ax.set_xticks([])
+    ax.set_yticks([])
+
+    size = args.image_size
+    image_per_row = min(len(instances), images_per_row)
+    images = [instance for instance in instances]
+    n_rows = (len(instances) - 1) // image_per_row + 1
+    row_images = []
+    n_empty = n_rows * images_per_row - len(instances)
+    images.append(np.zeros((size, size * n_empty, 3)))
+
+    for row in range(n_rows):
+        rimages = images[row * image_per_row : (row + 1) * images_per_row]
+        row_images.append(np.concatenate(rimages, axis=1))
+
+    image = np.concatenate(row_images, axis=0)
+    ax.imshow(image)
 
 
-def log_scores(args, keys, models):
-    pass
+def log_confusion_matrix_by_images(args, images, labels, preds):
+    classes = get_classes(args)
+    cnum = len(classes)
 
+    fig, axes = plt.subplots(nrows=cnum, ncols=cnum, figsize=(36, 36))
 
-def log_plots_and_scores(args, keys, models):
-    pass
+    for idx, (l_idx, p_idx) in enumerate(itertools.product(range(cnum), range(cnum))):
+        conf_images = images[(labels == l_idx) & (preds == p_idx)]
+        try:
+            _log_plots_image(args, axes[idx], conf_images[:25], images_per_row=5)
+        except:
+            pass
+
+    return fig
 
 
 # Below Use train.py
