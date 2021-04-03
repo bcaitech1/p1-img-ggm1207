@@ -1,0 +1,28 @@
+program: predict.py
+method: grid
+metric:
+    goal: maximize
+    name: total_valid_f1_score
+parameters:
+    test:
+        value: false
+    valid_size:
+        value: 0.2
+    age_model:
+        values: [
+            '03310209-graceful-sweep-8', 
+            '03301959-dry-sweep-2', 
+            '03310036-toasty-sweep-6'
+            ]
+    gender_model:
+        values: [
+            '03301657-trim-sweep-7', 
+            '03301623-confused-sweep-6', 
+            '03301553-youthful-sweep-3', 
+            '03301520-wild-sweep-2', 
+            '03301448-elated-sweep-1'
+            ]
+    mask_model:
+        values: [
+            'mask'
+            ]

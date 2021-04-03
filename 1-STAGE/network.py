@@ -14,3 +14,9 @@ class ResNetClassification(nn.Module):
 
     def forward(self, X):
         return self.backbone(X)
+
+
+def get_resnet34(num_class):
+    resnet = resnet34(pretrained=True)
+    resnet.fc = nn.Linear(resnet.fc.in_features, num_class, bias=True)
+    return resnet

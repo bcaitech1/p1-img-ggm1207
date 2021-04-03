@@ -3,12 +3,14 @@ import time
 import numpy as np
 from glob import glob
 from PIL import Image
+from functools import partial
 
 import cv2
 import pandas as pd
 import albumentations as A
 from torchvision import transforms
 from torch.utils.data import Dataset, DataLoader
+from torchsampler import ImbalancedDatasetSampler
 from sklearn.model_selection import StratifiedShuffleSplit
 
 from config import get_args
@@ -44,29 +46,32 @@ def get_album_transforms(args):
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
+
     trans_fns = [
-        A.CoarseDropout(max_width=20, max_height=100, p=0.1),
-        A.ChannelShuffle(p=0.1),
-        A.ColorJitter(p=0.1),
-        A.Cutout(p=0.1, max_h_size=50, max_w_size=50),
-        A.FancyPCA(alpha=0.1, p=0.1),
-        A.GridDistortion(p=0.1),
-        A.GridDropout(p=0.1),
-        A.HorizontalFlip(p=0.1),
-        A.HueSaturationValue(p=0.1),
-        A.RandomBrightnessContrast(p=0.1),
-        A.RandomGridShuffle(p=0.1),
-        A.ToGray(p=0.1),  # 12
+        A.MaskDropout(p=0.5),  # 0
+        A.ColorJitter(p=0.5),  # 1
+        A.FancyPCA(alpha=0.5, p=0.5),
+        A.GridDistortion(p=0.5),
+        A.GridDropout(p=0.5),  # 4
+        A.RandomBrightnessContrast(p=0.5),
+        A.RandomGridShuffle(p=0.5),  # 6
+        A.RandomGridShuffle(p=0.5, grid=(6, 6)),
+        A.InvertImg(p=0.5)
     ]
 
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
 
     new_trans_fns = [trans_fns[int(aug_idx)] for aug_idx in args.aug_indexs.split(",")]
 
-    #  trans_fn = trans_fns[args.temp_aug_index]
+    # 이미지 크기를 맞춰주는 함수
+    pre_transfn = A.Resize(args.image_size, args.image_size)
+
+    if args.train_key == "mask":
+        pre_transfn = A.CenterCrop(args.image_size, args.image_size, p=1)
+
     train_transform = A.Compose(
         [
-            A.Resize(args.image_size, args.image_size),
+            pre_transfn, 
             *new_trans_fns, # keep uint8
             A.Normalize(mean, std),
         ]
@@ -74,7 +79,7 @@ def get_album_transforms(args):
 
     test_transform = A.Compose(
         [
-            A.Resize(args.image_size, args.image_size),
+            pre_transfn, 
             A.Normalize(mean, std),
         ]
     )
@@ -95,21 +100,29 @@ class MaskDataSet(Dataset):
 
         self.transform = transform
 
+        w = h = args.image_size // 3
+        self.mask = np.zeros((args.image_size, args.image_size)).astype(np.uint8)
+        self.mask[:h+h, :] = np.ones_like(self.mask[:h+h, :]).astype(np.uint8)
+
     def __getitem__(self, idx):
 
         img = Image.open(self.images[idx])
         img = np.array(img)  # time: 16.8463
 
         if self.transform:
-            img = self.transform(image=img)["image"]
+            img = self.transform(image=img, mask=self.mask)["image"]
 
         # Share Memory
         img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
+        lbl = self._get_label(idx)
 
-        return img, self.labels[idx][self.label_idx]
+        return img, lbl
 
     def __len__(self):
         return len(self.images)
+
+    def _get_label(self, idx):
+        return self.labels[idx][self.label_idx]
 
     def _load_image_files_path(self, args, is_train):
         split = StratifiedShuffleSplit(
@@ -169,20 +182,25 @@ def get_dataloader(args):
     train_dataset = MaskDataSet(args, is_train=True, transform=train_transform)
     valid_dataset = MaskDataSet(args, is_train=False, transform=test_transform)
 
+    def callback_get_label(dataset, idx):
+        """ dataset: MaskDataSet  """
+        return dataset._get_label(idx)
+
     train_dataloader = DataLoader(
         train_dataset,
-        batch_size=args.batch_size,
-        shuffle=True,
-        num_workers=args.workers,
+        #  shuffle=True,
         pin_memory=True,
+        num_workers=args.workers,
+        batch_size=args.batch_size,
+        sampler=ImbalancedDatasetSampler(train_dataset, callback_get_label=callback_get_label)
     )
 
     valid_dataloader = DataLoader(
         valid_dataset,
-        batch_size=args.batch_size,
         shuffle=False,
-        num_workers=args.workers,
         pin_memory=True,
+        num_workers=args.workers,
+        batch_size=args.batch_size,
     )
 
     return train_dataloader, valid_dataloader

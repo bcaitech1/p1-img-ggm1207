@@ -5,6 +5,9 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn.metrics import accuracy_score, f1_score
 
+from gradcam.utils import visualize_cam
+from gradcam import GradCAMpp
+
 MEAN = np.array([0.485, 0.456, 0.406]).reshape(-1, 1, 1)
 STD = np.array([0.229, 0.224, 0.225]).reshape(-1, 1, 1)
 
@@ -27,10 +30,29 @@ def calulate_18class(mi, gi, ai):
     return 6 * mi + 3 * gi + ai
 
 
-def tensor_images_to_numpy_images(images):
+def tensor_images_to_numpy_images(images, renormalize=False):
     images = images.detach().cpu().numpy()
-    images = np.clip((images * STD) + MEAN, 0, 1)
+    if renormalize: 
+        images = np.clip((images * STD) + MEAN, 0, 1)
+    images = images.transpose(0, 2, 3, 1)
     return images
+
+
+def apply_grad_cam_pp_to_images(args, model, images):
+    gradcam_pp = GradCAMpp.from_config(model_type="resnet", arch=model, layer_name="layer4")
+
+    MEAN = torch.tensor([0.485, 0.456, 0.406]).to(args.device).reshape(-1, 1, 1)
+    STD = torch.tensor([0.229, 0.224, 0.225]).to(args.device).reshape(-1, 1, 1)
+    
+    new_images = torch.empty_like(images).to(args.device)
+    images = torch.clamp((images * STD) + MEAN, 0, 1)
+
+    for idx, image in enumerate(images):
+        mask_pp, _ = gradcam_pp(image.unsqueeze(0))
+        heatmap_pp, result_pp = visualize_cam(mask_pp, image)
+        new_images[idx] = result_pp
+
+    return new_images
 
 
 def tensor_to_numpy(tensors):

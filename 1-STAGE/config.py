@@ -14,7 +14,7 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def get_args():
-    parser = argparse.ArgumentParser(description="DCGAN")
+    parser = argparse.ArgumentParser(description="image classificaions")
 
     pa = partial(parser.add_argument)
     
@@ -33,7 +33,7 @@ def get_args():
     pa("--gender_model", type=str, default="gender", help="small dataset")
     pa("--epochs", type=int, default=25, help="number of epochs to train for")
     pa("--workers", type=int, default=2, help="number of data loading workers")
-    pa("--lr", type=float, default=0.0002, help="learning rate, default=0.0002")
+    pa("--lr", type=float, default=0.001, help="learning rate, default=0.0002")
     pa(
         "--train_key",
         type=str,
@@ -49,6 +49,8 @@ def get_args():
 
     # args = [] 주면 sweep 작동 안함...
     args, unknown = parser.parse_known_args()
+
+    #  args.lr = args.lr * args.batch_size / 256
 
     args.age_model = os.path.join(args.model_path, f"{args.age_model}.pt")
     args.gender_model = os.path.join(args.model_path, f"{args.gender_model}.pt")

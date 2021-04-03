@@ -1,11 +1,9 @@
 import itertools
+
 import numpy as np
 import pandas as pd
-
-import torch.nn.functional as F
 import matplotlib.pyplot as plt
-
-from prepare import get_classes
+from scipy.special import softmax
 from sklearn.metrics import (
     f1_score,
     precision_score,
@@ -13,6 +11,9 @@ from sklearn.metrics import (
     accuracy_score,
     confusion_matrix,
 )
+
+from prepare import get_classes
+from metrics import apply_grad_cam_pp_to_images, tensor_images_to_numpy_images
 
 
 def log_f1_and_acc_scores(args, labels, outputs):
@@ -93,22 +94,27 @@ def _log_confusion_matrix_by_images(args, ax, instances, images_per_row=10):
     ax.set_yticks([])
 
     size = args.image_size
-    image_per_row = min(len(instances), images_per_row)
+    images_per_row = min(len(instances), images_per_row)
     images = [instance for instance in instances]
-    n_rows = (len(instances) - 1) // image_per_row + 1
+    n_rows = (len(instances) - 1) // images_per_row + 1
     row_images = []
     n_empty = n_rows * images_per_row - len(instances)
     images.append(np.zeros((size, size * n_empty, 3)))
 
     for row in range(n_rows):
-        rimages = images[row * image_per_row : (row + 1) * images_per_row]
+        rimages = images[row * images_per_row : (row + 1) * images_per_row]
         row_images.append(np.concatenate(rimages, axis=1))
 
     image = np.concatenate(row_images, axis=0)
     ax.imshow(image)
 
 
-def log_confusion_matrix_by_images(args, images, labels, preds):
+def log_confusion_matrix_by_images(args, model, images, labels, preds):
+    """ 
+        images: tensor for grad_cam 
+        labels: numpy
+        preds: numpy
+    """
     classes = get_classes(args)
     cnum = len(classes)
 
@@ -116,10 +122,12 @@ def log_confusion_matrix_by_images(args, images, labels, preds):
 
     for idx, (l_idx, p_idx) in enumerate(itertools.product(range(cnum), range(cnum))):
         conf_images = images[(labels == l_idx) & (preds == p_idx)]
+        conf_images = apply_grad_cam_pp_to_images(args, model, conf_images)
+        conf_images = tensor_images_to_numpy_images(conf_images, renormalize=False)
         try:
-            _log_plots_image(args, axes[idx], conf_images[:25], images_per_row=5)
-        except:
-            pass
+            _log_confusion_matrix_by_images(args, axes[idx//cnum][idx%cnum], conf_images[:25], images_per_row=5)
+        except Exception as e:
+            print(e)
 
     return fig
 
@@ -148,18 +156,17 @@ def _log_plots_distribution(ax, output, pred_label, true_label, classes):
     thisplot[true_label].set_color("blue")
 
 
-def plots_result(args, images, outputs, labels):
+def plots_result(args, images, labels, outputs, title="plots_result"):
     """ all inputs are numpy """
 
-    #  MEAN = np.array([0.485, 0.456, 0.406]).reshape(-1, 1, 1)
-    #  STD = np.array([0.229, 0.224, 0.225]).reshape(-1, 1, 1)
-
-    outputs = np.softmax(outputs, dim=1)
+    outputs = softmax(outputs, axis=1)
     classes = get_classes(args)
 
     num_rows = num_cols = int(len(images) ** 0.5)
     num_images = num_rows * num_cols
     fig, axes = plt.subplots(nrows=num_rows, ncols=num_cols * 2, figsize=(36, 18))
+    fig.suptitle(title, fontsize=54)
+
     plt.setp(axes, xticks=[], yticks=[])
 
     for idx in range(num_images):
