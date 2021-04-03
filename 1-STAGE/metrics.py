@@ -1,6 +1,7 @@
 import torch
 import numpy as np
 import torch.nn as nn
+import torch.optim as optim
 import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn.metrics import accuracy_score, f1_score
@@ -59,6 +60,21 @@ def apply_grad_cam_pp_to_images(args, model, images):
 
 def tensor_to_numpy(tensors):
     return tensors.detach().cpu().numpy()
+
+
+def get_optimizers(args, model):
+    optim_fn = optim.Adam
+    if args.optimizer == "adamw":
+        optim_fn = optim.AdamW
+    if args.optimizer == "sgd":
+        optim_fn = optim.SGD
+    return optim_fn(model.parameters(), lr=args.lr, weight_decay=0.1)
+
+
+def get_lossfn(args):
+    # loss_fn = nn.CrossEntropyLoss()
+    loss_fn = FocalLoss(gamma=2).to(args.device)
+    return loss_fn
 
 
 class FocalLoss(nn.Module):

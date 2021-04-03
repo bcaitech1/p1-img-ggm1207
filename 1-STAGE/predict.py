@@ -19,9 +19,10 @@ from config import get_args
 from prepare import get_dataloader, get_transforms, get_classes
 from metrics import (
     FocalLoss,
+    get_lossfn,
     change_2d_to_1d,
-    calulate_18class,
     tensor_to_numpy,
+    calulate_18class,
     tensor_images_to_numpy_images,
 )
 
@@ -32,13 +33,7 @@ from log_helper import (
 )
 
 
-def get_lossfn(args):
-    # loss_fn = nn.CrossEntropyLoss()
-    loss_fn = FocalLoss(gamma=2).to(args.device)
-    return loss_fn
-
-
-def get_all_datas(args, model, dataloader):
+def get_all_datas(args, model, dataloader, argmax=True):
     model.eval()
 
     all_images = torch.tensor([]).to(args.device)
@@ -50,8 +45,9 @@ def get_all_datas(args, model, dataloader):
             images, labels = images.to(args.device), labels.to(args.device)
 
             preds = model(images)
-            preds = torch.argmax(preds, dim=1)
-            preds = change_2d_to_1d(preds)
+            if argmax:
+                preds = torch.argmax(preds, dim=1)
+                preds = change_2d_to_1d(preds)
 
             all_images = torch.cat((all_images, images))
             all_labels = torch.cat((all_labels, labels))

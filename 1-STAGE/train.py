@@ -20,7 +20,8 @@ from network import ResNetClassification, get_resnet34
 from log_helper import log_confusion_matrix_by_images, log_confusion_matrix
 
 from metrics import (
-    FocalLoss,
+    get_lossfn,
+    get_optimizers,
     change_2d_to_1d,
     tensor_to_numpy,
     apply_grad_cam_pp_to_images,
@@ -46,21 +47,6 @@ def epoch_time(start_time, end_time):
 
 def get_loss(args, loss_fn, outputs, labels):
     return loss_fn(outputs, labels)
-
-
-def get_optimizers(args, model):
-    optim_fn = optim.Adam
-    if args.optimizer == "adamw":
-        optim_fn = optim.AdamW
-    if args.optimizer == "sgd":
-        optim_fn = optim.SGD
-    return optim_fn(model.parameters(), lr=args.lr, weight_decay=0.1)
-
-
-def get_lossfn(args):
-    # loss_fn = nn.CrossEntropyLoss()
-    loss_fn = FocalLoss(gamma=2).to(args.device)
-    return loss_fn
 
 
 def train(args, model, optimizer, scheduler, scaler, loss_fn, dataloader):

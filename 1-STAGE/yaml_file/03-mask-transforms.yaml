@@ -8,17 +8,17 @@ parameters:
     test:
         value: false
     epochs:
-        value: 30
+        value: 27
     batch_size:
-        value: 256
+        value: 64
     optimizer:
-        value: "sgd"
+        value: "adamw"
     train_key:
         value: "mask"
     valid_size:
         value: 0.2
     lr:
-        value: 0.01
+        value: 0.0001
     aug_indexs:
         values: [
             "0",

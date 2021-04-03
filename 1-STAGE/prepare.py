@@ -46,7 +46,6 @@ def get_album_transforms(args):
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-
     trans_fns = [
         A.MaskDropout(p=0.5),  # 0
         A.ColorJitter(p=0.5),  # 1
@@ -56,7 +55,7 @@ def get_album_transforms(args):
         A.RandomBrightnessContrast(p=0.5),
         A.RandomGridShuffle(p=0.5),  # 6
         A.RandomGridShuffle(p=0.5, grid=(6, 6)),
-        A.InvertImg(p=0.5)
+        A.InvertImg(p=0.5),
     ]
 
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
@@ -71,15 +70,15 @@ def get_album_transforms(args):
 
     train_transform = A.Compose(
         [
-            pre_transfn, 
-            *new_trans_fns, # keep uint8
+            pre_transfn,
+            *new_trans_fns,  # keep uint8
             A.Normalize(mean, std),
         ]
     )
 
     test_transform = A.Compose(
         [
-            pre_transfn, 
+            pre_transfn,
             A.Normalize(mean, std),
         ]
     )
@@ -102,7 +101,7 @@ class MaskDataSet(Dataset):
 
         w = h = args.image_size // 3
         self.mask = np.zeros((args.image_size, args.image_size)).astype(np.uint8)
-        self.mask[:h+h, :] = np.ones_like(self.mask[:h+h, :]).astype(np.uint8)
+        self.mask[: h + h, :] = np.ones_like(self.mask[: h + h, :]).astype(np.uint8)
 
     def __getitem__(self, idx):
 
@@ -192,7 +191,9 @@ def get_dataloader(args):
         pin_memory=True,
         num_workers=args.workers,
         batch_size=args.batch_size,
-        sampler=ImbalancedDatasetSampler(train_dataset, callback_get_label=callback_get_label)
+        sampler=ImbalancedDatasetSampler(
+            train_dataset, callback_get_label=callback_get_label
+        ),
     )
 
     valid_dataloader = DataLoader(
