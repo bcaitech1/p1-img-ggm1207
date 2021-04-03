@@ -29,7 +29,8 @@ from metrics import (
 
 from log_helper import plots_result
 
-warnings.filterwarnings(action='ignore')
+warnings.filterwarnings(action="ignore")
+
 
 def init_weights(m):
     for name, param in m.named_parameters():
@@ -70,11 +71,11 @@ def train(args, model, optimizer, scheduler, scaler, loss_fn, dataloader):
         optimizer.zero_grad()
 
         images, labels = images.to(args.device), labels.to(args.device)
-        
+
         with autocast():
             outputs = model(images)
             loss = get_loss(args, loss_fn, outputs, labels)
-        
+
         scaler.scale(loss).backward()
         scaler.step(optimizer)
         scaler.update()
@@ -113,13 +114,24 @@ def evaluate(args, model, loss_fn, dataloader):
     return epoch_loss / len(dataloader), all_labels, all_preds
 
 
-def run(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader, test_dataloader):
+def run(
+    args,
+    model,
+    optimizer,
+    scheduler,
+    scaler,
+    loss_fn,
+    train_dataloader,
+    test_dataloader,
+):
     best_valid_loss = float("inf")
 
     for epoch in range(args.epochs):
         start_time = time.time()
 
-        train_loss = train(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader)
+        train_loss = train(
+            args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader
+        )
         valid_loss, label_list, output_list = evaluate(
             args, model, loss_fn, test_dataloader
         )
@@ -135,9 +147,9 @@ def run(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader, te
         output_list = tensor_to_numpy(output_list)
         label_list = tensor_to_numpy(label_list)
 
-        f1_sco = f1_score(output_list, label_list, average='macro')
-        pr_sco = precision_score(output_list, label_list, average='macro')
-        re_sco = recall_score(output_list, label_list, average='macro')
+        f1_sco = f1_score(output_list, label_list, average="macro")
+        pr_sco = precision_score(output_list, label_list, average="macro")
+        re_sco = recall_score(output_list, label_list, average="macro")
         ac_sco = accuracy_score(output_list, label_list)
 
         wandb.log(
@@ -161,9 +173,7 @@ def run(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader, te
     # Lsat Visualization
     model = torch.load(model_save_path).to(args.device)
 
-    _, labels, preds = evaluate(
-        args, model, loss_fn, test_dataloader
-    )
+    _, labels, preds = evaluate(args, model, loss_fn, test_dataloader)
     labels = tensor_to_numpy(labels)
     preds = tensor_to_numpy(preds)
 
@@ -183,8 +193,10 @@ def run(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader, te
         images, labels = images.to(args.device), labels.to(args.device)
 
         preds = model(images)
-        
-        images = apply_grad_cam_pp_to_images(args, model, images) # return same shape tensor
+
+        images = apply_grad_cam_pp_to_images(
+            args, model, images
+        )  # return same shape tensor
         images = tensor_images_to_numpy_images(images, renormalize=False)
         labels = tensor_to_numpy(labels)
         preds = tensor_to_numpy(preds)
@@ -217,12 +229,23 @@ def main(args):
     print("".join([f"{k:<15} : {v}\n" for k, v in sorted(args.items(), key=len)]))
 
     optimizer = get_optimizers(args, model)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=10, eta_min=0)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, T_max=10, eta_min=0
+    )
     scaler = GradScaler()
 
     loss_fn = get_lossfn(args)
 
-    run(args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader, test_dataloader)
+    run(
+        args,
+        model,
+        optimizer,
+        scheduler,
+        scaler,
+        loss_fn,
+        train_dataloader,
+        test_dataloader,
+    )
 
 
 if __name__ == "__main__":

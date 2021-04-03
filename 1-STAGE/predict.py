@@ -13,7 +13,6 @@ from sklearn.metrics import (
     accuracy_score,
     precision_score,
     confusion_matrix,
-
 )
 
 from config import get_args
@@ -26,13 +25,18 @@ from metrics import (
     tensor_images_to_numpy_images,
 )
 
-from log_helper import log_f1_and_acc_scores, log_confusion_matrix, log_confusion_matrix_by_images
+from log_helper import (
+    log_f1_and_acc_scores,
+    log_confusion_matrix,
+    log_confusion_matrix_by_images,
+)
 
 
 def get_lossfn(args):
     # loss_fn = nn.CrossEntropyLoss()
     loss_fn = FocalLoss(gamma=2).to(args.device)
     return loss_fn
+
 
 def get_all_datas(args, model, dataloader):
     model.eval()
@@ -81,13 +85,15 @@ def predict_and_logs_by_class_with_all_models(args, keys, models):
 
         fig1 = log_confusion_matrix(args, all_labels, all_preds)
         # model for gradcam
-        fig2 = log_confusion_matrix_by_images(args, model, all_images, all_labels, all_preds)
+        fig2 = log_confusion_matrix_by_images(
+            args, model, all_images, all_labels, all_preds
+        )
 
         cf_images.append(wandb.Image(fig1))
         cf_images.append(wandb.Image(fig2))
-        
+
         print("cf_images:", cf_images)
-        wandb.log({f"{key} Confusion Matrix": cf_images })
+        wandb.log({f"{key} Confusion Matrix": cf_images})
 
         final_zip_labels.append(all_labels)
         final_zip_preds.append(all_preds)
@@ -95,7 +101,7 @@ def predict_and_logs_by_class_with_all_models(args, keys, models):
         cf_images = []
 
     summary_tables.fillna(0, inplace=True)
-    summary_tables = summary_tables.applymap(lambda x: "{:,.1f}%".format(x*100))
+    summary_tables = summary_tables.applymap(lambda x: "{:,.1f}%".format(x * 100))
 
     return summary_tables, final_zip_labels, final_zip_preds
 
@@ -128,9 +134,11 @@ def main(args):
     keys = ["mask", "gender", "age"]
 
     # mga: mask, gender, age (sequence)
-    summary_tables, mga_label_lists, mga_output_lists = predict_and_logs_by_class_with_all_models(
-        args, keys, models
-    )
+    (
+        summary_tables,
+        mga_label_lists,
+        mga_output_lists,
+    ) = predict_and_logs_by_class_with_all_models(args, keys, models)
 
     labels, preds = [], []
 
@@ -145,15 +153,19 @@ def main(args):
     re_sco = recall_score(labels, preds, average="macro")
     pr_sco = precision_score(labels, preds, average="macro")
 
-    table = wandb.Table(data=summary_tables.to_numpy(), rows=keys, columns=list(summary_tables))
+    table = wandb.Table(
+        data=summary_tables.to_numpy(), rows=keys, columns=list(summary_tables)
+    )
 
-    wandb.log({
-        "predict_suumary_table(mask, gender, age)": table, 
-        "total_valid_accuracy": ac_sco,
-        "total_valid_f1_score": f1_sco,
-        "total_valid_pr_score": pr_sco,
-        "total_valid_re_score": re_sco
-        })
+    wandb.log(
+        {
+            "predict_suumary_table(mask, gender, age)": table,
+            "total_valid_accuracy": ac_sco,
+            "total_valid_f1_score": f1_sco,
+            "total_valid_pr_score": pr_sco,
+            "total_valid_re_score": re_sco,
+        }
+    )
 
 
 if __name__ == "__main__":

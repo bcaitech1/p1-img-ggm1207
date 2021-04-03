@@ -110,10 +110,10 @@ def _log_confusion_matrix_by_images(args, ax, instances, images_per_row=10):
 
 
 def log_confusion_matrix_by_images(args, model, images, labels, preds):
-    """ 
-        images: tensor for grad_cam 
-        labels: numpy
-        preds: numpy
+    """
+    images: tensor for grad_cam
+    labels: numpy
+    preds: numpy
     """
     classes = get_classes(args)
     cnum = len(classes)
@@ -125,7 +125,9 @@ def log_confusion_matrix_by_images(args, model, images, labels, preds):
         conf_images = apply_grad_cam_pp_to_images(args, model, conf_images)
         conf_images = tensor_images_to_numpy_images(conf_images, renormalize=False)
         try:
-            _log_confusion_matrix_by_images(args, axes[idx//cnum][idx%cnum], conf_images[:25], images_per_row=5)
+            _log_confusion_matrix_by_images(
+                args, axes[idx // cnum][idx % cnum], conf_images[:25], images_per_row=5
+            )
         except Exception as e:
             print(e)
 

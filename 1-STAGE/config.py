@@ -3,21 +3,23 @@ import argparse
 
 from functools import partial
 
+
 def str2bool(v):
     if isinstance(v, bool):
-       return v
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return v
+    if v.lower() in ("yes", "true", "t", "y", "1"):
         return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+    elif v.lower() in ("no", "false", "f", "n", "0"):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError("Boolean value expected.")
+
 
 def get_args():
     parser = argparse.ArgumentParser(description="image classificaions")
 
     pa = partial(parser.add_argument)
-    
+
     pa("--aug_indexs", type=str, default="0,1,2")
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")

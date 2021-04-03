@@ -10,7 +10,6 @@ import torch.nn as nn
 from train import evaluate
 from config import get_args
 from prepare import get_dataloader, get_transforms
-from metrics import change_2d_to_1d, change_age_to_cat, cal_metrics, cal_accuracy
 
 
 def eval_class(mi, gi, ai):
@@ -37,7 +36,6 @@ def main(args):
     eval_dir = "/opt/ml/input/data/eval/"
     eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
 
-
     for idx, image_base_path in enumerate(eval_df["ImageID"]):
         image_full_path = os.path.join(eval_dir, "images", image_base_path)
         image = Image.open(image_full_path)
@@ -54,7 +52,7 @@ def main(args):
         res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
         eval_df.iloc[idx, 1] = res
 
-        print(idx, end='\r')
+        print(idx, end="\r")
 
     sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
     sub_path = os.path.join(sub_path, f"{args.filename}-submission.csv")
