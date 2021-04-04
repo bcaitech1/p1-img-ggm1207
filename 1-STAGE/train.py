@@ -1,5 +1,6 @@
 import os
 import time
+import json
 import math
 import pickle
 import random
@@ -128,8 +129,8 @@ def run(
             best_valid_loss = valid_loss
             torch.save(model, model_save_path)
 
-            with open(model_save_path[:-2] + "args") as f:
-                pickle.dump(args, f)
+            with open(model_save_path[:-2] + "args", "w") as f:
+                json.dump(dict(args), f)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -250,8 +251,8 @@ if __name__ == "__main__":
     #  torch.cuda.manual_seed_all(args.seed) # if use multi-GPU
 
     # 연산 처리 속도가 감소된다고 한다.
-    #  torch.backends.cudnn.benchmark = False
-    #  torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.deterministic = True
 
     print("PyTorch version:[%s]." % (torch.__version__))
     print("This code use [%s]." % (args.device))

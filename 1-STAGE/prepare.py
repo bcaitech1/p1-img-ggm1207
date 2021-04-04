@@ -156,7 +156,7 @@ class MaskDataSet(Dataset):
             dir_path = os.path.join(args.data_dir, "images", dir_name)
 
             image_id, gender_lbl, _, age_lbl = dir_name.split("_")
-            age_class, gender_class = self._mapping_label(age_lbl, gender_lbl)
+            age_class, gender_class = self._mapping_label(int(age_lbl), gender_lbl)
 
             for jpg_filepath in glob(dir_path + "/*"):
                 jpg_basename = os.path.basename(jpg_filepath)
