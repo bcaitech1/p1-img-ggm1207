@@ -8,21 +8,29 @@ parameters:
     test:
         value: false
     epochs:
-        value: 27
+        value: 35
     batch_size:
-        values: [64]
+        value: 64
     optimizer:
-        value: "adamw"
+        values: ["adamw", "adam", "sgd"]
     train_key:
         value: "gender"
     valid_size:
         value: 0.2
     lr:
-        value: 0.01
+        value: 0.001
     aug_indexs:
-        values: ["0", "1", "2", "3", "4", "5", "6", "7", "8"]
+        values:
+            [
+                "FancyPCA",
+                "RGS_33",
+                "CLAHE",
+                "FancyPCA,RGS_33",
+                "RGS_33,CLAHE",
+                "CLAHE,FancyPCA",
+            ]
 early_terminate:
     type: hyperband
-    max_iter: 27
+    max_iter: 35
     s: 2
     eta: 3

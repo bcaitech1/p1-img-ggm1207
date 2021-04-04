@@ -32,6 +32,6 @@ parameters:
             ]
 early_terminate:
     type: hyperband
-    max_iter: 50
+    max_iter: 35
     s: 2
     eta: 3
