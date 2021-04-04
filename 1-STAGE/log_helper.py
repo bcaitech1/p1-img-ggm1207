@@ -25,10 +25,13 @@ def log_f1_and_acc_scores(args, labels, outputs):
     for class_idx in range(len(classes)):
         fancy_idx = np.where(labels == class_idx)
 
-        f1 = f1_score(labels[fancy_idx], outputs[fancy_idx], average="macro")
-        pr = precision_score(labels[fancy_idx], outputs[fancy_idx], average="macro")
-        re = recall_score(labels[fancy_idx], outputs[fancy_idx], average="macro")
-        acc = accuracy_score(labels[fancy_idx], outputs[fancy_idx])
+        binary_labels = labels[fancy_idx] == class_idx
+        binary_outputs = outputs[fancy_idx] == class_idx
+
+        f1 = f1_score(binary_labels, binary_outputs, average="binary")
+        pr = precision_score(binary_labels, binary_outputs, average="binary")
+        re = recall_score(binary_labels, binary_outputs, average="binary")
+        acc = accuracy_score(binary_labels, binary_outputs)
 
         summary_table.loc[args.train_key, f"{class_idx} f1"] = f1
         summary_table.loc[args.train_key, f"{class_idx} pr"] = pr

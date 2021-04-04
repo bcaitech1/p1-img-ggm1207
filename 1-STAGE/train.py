@@ -1,6 +1,7 @@
 import os
 import time
 import math
+import pickle
 import random
 import warnings
 from datetime import datetime
@@ -126,6 +127,9 @@ def run(
             model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
             best_valid_loss = valid_loss
             torch.save(model, model_save_path)
+
+            with open(model_save_path[:-2] + "args") as f:
+                pickle.dump(args, f)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)

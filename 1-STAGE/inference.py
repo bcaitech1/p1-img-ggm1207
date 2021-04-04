@@ -31,7 +31,7 @@ def main(args):
     gender_model.eval()
     mask_model.eval()
 
-    transform = get_transforms(args)
+    _, transform = get_transforms(args)
 
     eval_dir = "/opt/ml/input/data/eval/"
     eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))

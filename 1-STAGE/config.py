@@ -36,6 +36,7 @@ def get_args():
     pa("--epochs", type=int, default=25, help="number of epochs to train for")
     pa("--workers", type=int, default=2, help="number of data loading workers")
     pa("--lr", type=float, default=0.001, help="learning rate, default=0.0002")
+    pa("--use_only_mask", type=str2bool, default=False, help="mask쓴 데이터만 구성")
     pa(
         "--train_key",
         type=str,

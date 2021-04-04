@@ -46,6 +46,11 @@ def get_album_transforms(args):
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
+    w = h = args.image_size // 3
+
+    mask = np.zeros((args.image_size, args.image_size)).astype(np.uint8)
+    mask[: h + h, :] = np.ones_like(mask[: h + h, :]).astype(np.uint8)
+
     trans_fns = [
         A.MaskDropout(p=0.5),  # 0
         A.ColorJitter(p=0.5),  # 1
@@ -69,19 +74,11 @@ def get_album_transforms(args):
         pre_transfn = A.CenterCrop(args.image_size, args.image_size, p=1)
 
     train_transform = A.Compose(
-        [
-            pre_transfn,
-            *new_trans_fns,  # keep uint8
-            A.Normalize(mean, std),
-        ]
+        [pre_transfn, *new_trans_fns, A.Normalize(mean, std)]  # keep uint8
     )
 
-    test_transform = A.Compose(
-        [
-            pre_transfn,
-            A.Normalize(mean, std),
-        ]
-    )
+    test_transform = A.Compose([pre_transfn, A.Normalize(mean, std)])
+    train_transform = partial(train_transform, mask=mask)
 
     return train_transform, test_transform
 
@@ -99,17 +96,13 @@ class MaskDataSet(Dataset):
 
         self.transform = transform
 
-        w = h = args.image_size // 3
-        self.mask = np.zeros((args.image_size, args.image_size)).astype(np.uint8)
-        self.mask[: h + h, :] = np.ones_like(self.mask[: h + h, :]).astype(np.uint8)
-
     def __getitem__(self, idx):
 
         img = Image.open(self.images[idx])
         img = np.array(img)  # time: 16.8463
 
         if self.transform:
-            img = self.transform(image=img, mask=self.mask)["image"]
+            img = self.transform(image=img)["image"]
 
         # Share Memory
         img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
@@ -123,7 +116,7 @@ class MaskDataSet(Dataset):
     def _get_label(self, idx):
         return self.labels[idx][self.label_idx]
 
-    def _load_image_files_path(self, args, is_train):
+    def _load_dataframe(self, args, is_train):
         split = StratifiedShuffleSplit(
             n_splits=1,
             test_size=args.valid_size,
@@ -137,37 +130,46 @@ class MaskDataSet(Dataset):
             valid_dataset = self.datas.loc[valid_index]
 
         dataset = train_dataset if is_train else valid_dataset
+
+        return dataset
+
+    def _mapping_label(self, age_lbl, gender_lbl):
+        # ["age < 30", "30 <= age < 60", "60 <= age"]
+        gender_class = ["male", "female"].index(gender_lbl)
+        age_class = 0
+
+        if age_lbl >= 60:
+            age_class = 2
+        elif age_lbl >= 30:
+            age_class = 1
+
+        return age_class, gender_class
+
+    def _load_image_files_path(self, args, is_train):
+
+        dataset = self._load_dataframe(args, is_train)
         gender_classes = ["male", "female"]
 
-        images = []
-        labels = []
+        images, labels = [], []
 
         for dir_name in dataset["path"]:
             dir_path = os.path.join(args.data_dir, "images", dir_name)
 
             image_id, gender_lbl, _, age_lbl = dir_name.split("_")
-
-            gender_class = gender_classes.index(gender_lbl)
-
-            # ["age < 30", "30 <= age < 60", "60 <= age"]
-            age_lbl = int(age_lbl)
-
-            if age_lbl < 30:
-                age_class = 0
-            elif age_lbl >= 60:
-                age_class = 2
-            else:
-                age_class = 1
+            age_class, gender_class = self._mapping_label(age_lbl, gender_lbl)
 
             for jpg_filepath in glob(dir_path + "/*"):
                 jpg_basename = os.path.basename(jpg_filepath)
 
-                if "normal" in jpg_basename:
-                    mask_class = 2
-                elif "incorrect" in jpg_basename:
+                mask_class = 0
+
+                if "incorrect" in jpg_basename:
                     mask_class = 1
-                else:
-                    mask_class = 0
+                elif "normal" in jpg_basename:
+                    mask_class = 2
+
+                if args.use_only_mask and mask_class == 2:
+                    continue
 
                 images.append(jpg_filepath)
                 labels.append((gender_class, age_class, mask_class))
@@ -212,9 +214,11 @@ if __name__ == "__main__":
 
     train_dataloader, valid_dataloader = get_dataloader(args)
     s_time = time.time()
+
     for idx, (images, labels) in enumerate(train_dataloader):
         pass
 
     for idx, (images, labels) in enumerate(train_dataloader):
         pass
+
     print(time.time() - s_time)
