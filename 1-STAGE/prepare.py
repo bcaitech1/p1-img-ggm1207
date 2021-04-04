@@ -51,26 +51,42 @@ def get_album_transforms(args):
     mask = np.zeros((args.image_size, args.image_size)).astype(np.uint8)
     mask[: h + h, :] = np.ones_like(mask[: h + h, :]).astype(np.uint8)
 
-    trans_fns = [
-        A.MaskDropout(p=0.5),  # 0
-        A.ColorJitter(p=0.5),  # 1
-        A.FancyPCA(alpha=0.5, p=0.5),
-        A.GridDistortion(p=0.5),
-        A.GridDropout(p=0.5),  # 4
-        A.RandomBrightnessContrast(p=0.5),
-        A.RandomGridShuffle(p=0.5),  # 6
-        A.RandomGridShuffle(p=0.5, grid=(6, 6)),
-        A.InvertImg(p=0.5),
-    ]
+    #  trans_fns = [
+    #      A.MaskDropout(p=0.5),  # 0
+    #      A.ColorJitter(p=0.5),  # 1
+    #      A.FancyPCA(alpha=0.5, p=0.5),
+    #      A.GridDistortion(p=0.5),
+    #      A.GridDropout(p=0.5),  # 4
+    #      A.RandomBrightnessContrast(p=0.5),
+    #      A.RandomGridShuffle(p=0.5),  # 6
+    #      A.RandomGridShuffle(p=0.5, grid=(6, 6)),
+    #      A.InvertImg(p=0.5),
+    #  ]
+
+    aug_keys = args.aug_keys.split(",")
+    prob = 1 / (len(aug_keys) + 1)
+
+    trans_fns = {
+        "MD": A.MaskDropout(p=prob),
+        "CJ": A.ColorJitter(p=prob),
+        "FancyPCA": A.FancyPCA(alpha=prob, p=prob),
+        "GridDist": A.GridDistortion(p=prob),
+        "GridDrop": A.GridDropout(p=prob),
+        "RandomBC": A.RandomBrightnessContrast(p=prob),
+        "RGS_33": A.RandomGridShuffle(p=prob),
+        "RGS_66": A.RandomGridShuffle(p=prob, grid=(6, 6)),
+        "INV": A.InvertImg(p=prob),
+        "CLAHE": A.CLAHE(p=prob),
+    }
 
     # (결국에는) Trasnsform을 만들어서 사용하는 것이 좋다.
 
-    new_trans_fns = [trans_fns[int(aug_idx)] for aug_idx in args.aug_indexs.split(",")]
+    new_trans_fns = [trans_fns[aug_key] for aug_key in aug_keys]
 
     # 이미지 크기를 맞춰주는 함수
     pre_transfn = A.Resize(args.image_size, args.image_size)
 
-    if args.train_key == "mask":
+    if args.train_key in ["mask", "age"]:
         pre_transfn = A.CenterCrop(args.image_size, args.image_size, p=1)
 
     train_transform = A.Compose(

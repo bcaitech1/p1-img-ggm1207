@@ -1,38 +1,39 @@
 program: train.py
-name: "MASK-DATA-AUGMENTATION-02"
-method: random
+name: "MASK-DATA-AUGMENTATION-03"
+method: bayes
 metric:
     goal: minimize
-    name: valid_loss
+    name: valid_f1_score
 parameters:
     test:
         value: false
     epochs:
-        value: 27
+        value: 35
     batch_size:
         value: 64
     optimizer:
-        value: "adamw"
+        values: ["adamw", "adam", "sgd"]
     train_key:
         value: "mask"
     valid_size:
         value: 0.2
     lr:
-        value: 0.0001
+        value: 0.001
+    loss_metric:
+        values: ["cross_entropy", "f1_loss", "focal_loss", "smoothing"]
     aug_indexs:
-        values: [
-            "0",
-            "1",
-            "2",
-            "3",
-            "4",
-            "5",
-            "6",
-            "7",
-            "8",
+        values:
+            [
+                "CJ",
+                "RGS_33",
+                "FancyPCA",
+                "CJ,FancyPCA",
+                "CJ,RGS_33",
+                "FancyPCA,RGS_33",
+                "CLAHE",
             ]
 early_terminate:
-    type: hyperband 
-    max_iter: 27
+    type: hyperband
+    max_iter: 50
     s: 2
     eta: 3

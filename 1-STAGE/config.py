@@ -20,7 +20,7 @@ def get_args():
 
     pa = partial(parser.add_argument)
 
-    pa("--aug_indexs", type=str, default="0,1,2")
+    pa("--aug_keys", type=str, default="CJ,FancyPCA")
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")
     pa("--inf_filename", type=str, default="valid", help="inference filename")
@@ -37,6 +37,7 @@ def get_args():
     pa("--workers", type=int, default=2, help="number of data loading workers")
     pa("--lr", type=float, default=0.001, help="learning rate, default=0.0002")
     pa("--use_only_mask", type=str2bool, default=False, help="mask쓴 데이터만 구성")
+    pa("--loss_metric", type=str, default="f1_loss", help="로스 설정")
     pa(
         "--train_key",
         type=str,

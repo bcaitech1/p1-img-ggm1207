@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score, f1_score
 
 from gradcam.utils import visualize_cam
 from gradcam import GradCAMpp
+from prepare import get_classes
 
 MEAN = np.array([0.485, 0.456, 0.406]).reshape(-1, 1, 1)
 STD = np.array([0.229, 0.224, 0.225]).reshape(-1, 1, 1)
@@ -68,18 +69,83 @@ def get_optimizers(args, model):
         optim_fn = optim.AdamW
     if args.optimizer == "sgd":
         optim_fn = optim.SGD
-    return optim_fn(model.parameters(), lr=args.lr, weight_decay=0.1)
+    return optim_fn(model.parameters(), lr=args.lr, weight_decay=0.0001)
 
 
 def get_lossfn(args):
-    # loss_fn = nn.CrossEntropyLoss()
-    loss_fn = FocalLoss(gamma=2).to(args.device)
+    num_classes = len(get_classes(args))
+
+    loss_fns = {
+        "cross_entropy": nn.CrossEntropyLoss(),
+        "f1_loss": F1Loss(classes=num_classes),
+        "focal_loss": FocalLoss(gamma=3),
+        "smoothing": LabelSmoothingLoss(classes=num_classes, smoothing=0.3),
+    }
+
+    loss_fn = loss_fns[args.loss_metric]
+
     return loss_fn
 
 
+class LabelSmoothingLoss(nn.Module):
+    def __init__(self, classes=3, smoothing=0.0, dim=-1):
+        super(LabelSmoothingLoss, self).__init__()
+        self.confidence = 1.0 - smoothing
+        self.smoothing = smoothing
+        self.cls = classes
+        self.dim = dim
+
+    def forward(self, pred, target):
+        pred = pred.log_softmax(dim=self.dim)
+        with torch.no_grad():
+            true_dist = torch.zeros_like(pred)
+            true_dist.fill_(self.smoothing / (self.cls - 1))
+            true_dist.scatter_(1, target.data.unsqueeze(1), self.confidence)
+        return torch.mean(torch.sum(-true_dist * pred, dim=self.dim))
+
+
 class F1Loss(nn.Module):
-    def __init__(self, args, epsilon=1e-7):
+    def __init__(self, classes=3, epsilon=1e-7):
         super().__init__()
+        self.classes = classes
+        self.epsilon = epsilon
+
+    def forward(self, y_pred, y_true):
+        assert y_pred.ndim == 2
+        assert y_true.ndim == 1
+
+        y_true = F.one_hot(y_true, self.classes).to(torch.float32)
+        y_pred = F.softmax(y_pred, dim=1)
+
+        tp = (y_true * y_pred).sum(dim=0).to(torch.float32)
+        tn = ((1 - y_true) * (1 - y_pred)).sum(dim=0).to(torch.float32)
+        fp = ((1 - y_true) * y_pred).sum(dim=0).to(torch.float32)
+        fn = (y_true * (1 - y_pred)).sum(dim=0).to(torch.float32)
+
+        precision = tp / (tp + fp + self.epsilon)
+        recall = tp / (tp + fn + self.epsilon)
+
+        f1 = 2 * (precision * recall) / (precision + recall + self.epsilon)
+        f1 = f1.clamp(min=self.epsilon, max=1 - self.epsilon)
+        return 1 - f1.mean()
+
+
+#  class FocalLoss(nn.Module):
+#      def __init__(self, weight=None, gamma=2.0, reduction="mean"):
+#          nn.Module.__init__(self)
+#          self.weight = weight
+#          self.gamma = gamma
+#          self.reduction = reduction
+#
+#      def forward(self, input_tensor, target_tensor):
+#          log_prob = F.log_softmax(input_tensor, dim=-1)
+#          prob = torch.exp(log_prob)
+#          return F.nll_loss(
+#              ((1 - prob) ** self.gamma) * log_prob,
+#              target_tensor,
+#              weight=self.weight,
+#              reduction=self.reduction,
+#          )
 
 
 class FocalLoss(nn.Module):
