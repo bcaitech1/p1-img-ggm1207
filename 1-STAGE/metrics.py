@@ -77,6 +77,11 @@ def get_lossfn(args):
     return loss_fn
 
 
+class F1Loss(nn.Module):
+    def __init__(self, args, epsilon=1e-7):
+        super().__init__()
+
+
 class FocalLoss(nn.Module):
     def __init__(self, gamma=0, alpha=None, size_average=True):
         super(FocalLoss, self).__init__()

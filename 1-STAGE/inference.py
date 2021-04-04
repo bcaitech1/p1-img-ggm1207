@@ -55,7 +55,7 @@ def main(args):
         print(idx, end="\r")
 
     sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
-    sub_path = os.path.join(sub_path, f"{args.filename}-submission.csv")
+    sub_path = os.path.join(sub_path, f"{args.inf_filename}-submission.csv")
     eval_df.to_csv(sub_path, index=False)
 
 

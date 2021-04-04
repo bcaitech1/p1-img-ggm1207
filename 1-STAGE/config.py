@@ -23,7 +23,7 @@ def get_args():
     pa("--aug_indexs", type=str, default="0,1,2")
     pa("--seed", type=int, default=42, help="random seed")
     pa("--test", type=str2bool, default=True, help="small dataset")
-    pa("--filename", type=str, default="valid", help="filename")
+    pa("--inf_filename", type=str, default="valid", help="inference filename")
     pa("--data_dir", type=str, default="/opt/ml/input/data/train")
     pa("--valid_size", type=float, default=0.5, help="valid rate")
     pa("--age_model", type=str, default="age", help="small dataset")
@@ -54,6 +54,8 @@ def get_args():
     args, unknown = parser.parse_known_args()
 
     #  args.lr = args.lr * args.batch_size / 256
+
+    age_model_path = "kage" if args.use_only_mask else args.age_model
 
     args.age_model = os.path.join(args.model_path, f"{args.age_model}.pt")
     args.gender_model = os.path.join(args.model_path, f"{args.gender_model}.pt")
