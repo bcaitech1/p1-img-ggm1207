@@ -272,7 +272,6 @@ if __name__ == "__main__":
 
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
-
     torch.cuda.manual_seed_all(args.seed)  # if use multi-GPU
 
     # 연산 처리 속도가 감소된다고 한다.
