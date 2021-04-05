@@ -14,7 +14,7 @@ parameters:
     optimizer:
         values: ["adamw", "adam", "sgd"]
     train_key:
-        value: "age"
+        value: "age-coral"
     valid_size:
         value: 0.2
     lr:

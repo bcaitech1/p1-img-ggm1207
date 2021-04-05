@@ -76,7 +76,6 @@ def get_optimizers(args, model):
 
 def get_lossfn(args):
     num_classes = get_num_classes(args)
-    print(num_classes)
 
     loss_fns = {
         "cross_entropy": nn.CrossEntropyLoss(),

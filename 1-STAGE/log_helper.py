@@ -12,7 +12,7 @@ from sklearn.metrics import (
     confusion_matrix,
 )
 
-from prepare import get_classes
+from prepare import get_classes, get_num_classes
 from metrics import apply_grad_cam_pp_to_images, tensor_images_to_numpy_images
 
 
@@ -42,11 +42,13 @@ def log_f1_and_acc_scores(args, labels, outputs):
 
 
 def log_confusion_matrix(args, labels, preds, title="Confusion Matrix"):
-    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 9))
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(36, 18))
     fig.suptitle(title, fontsize=16)
     cmap = plt.cm.Oranges
 
-    cm = confusion_matrix(labels, preds)
+    num_class = get_num_classes(args)
+
+    cm = confusion_matrix(labels, preds, labels=range(num_class))
     classes = get_classes(args)
 
     axes[0].imshow(cm, interpolation="nearest", cmap=cmap)

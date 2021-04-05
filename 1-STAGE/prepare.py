@@ -37,7 +37,7 @@ def get_classes(args):
     if args.train_key == "gender":
         return ["male", "female"]
     if args.train_key == "age-coral":
-        return [str(i) for i in range(18, 61)]
+        return [str(i) for i in range(0, 43)]
     raise KeyError("key must be in ['mask', 'age', 'gender']")
 
 
