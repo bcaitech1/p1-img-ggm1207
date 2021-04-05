@@ -243,16 +243,16 @@ if __name__ == "__main__":
     args = get_args()
     args.device = "cuda:0" if torch.cuda.is_available() else "cpu"
 
-    random.seed(args.seed)
-    np.random.seed(args.seed)
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-    #  torch.cuda.manual_seed_all(args.seed) # if use multi-GPU
+    torch.cuda.manual_seed_all(args.seed) # if use multi-GPU
 
     # 연산 처리 속도가 감소된다고 한다.
-    torch.backends.cudnn.benchmark = False
     torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(args.seed)
+    random.seed(args.seed)
 
     print("PyTorch version:[%s]." % (torch.__version__))
     print("This code use [%s]." % (args.device))

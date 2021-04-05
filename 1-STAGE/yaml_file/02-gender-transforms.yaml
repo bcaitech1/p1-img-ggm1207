@@ -19,6 +19,8 @@ parameters:
         value: 0.2
     lr:
         value: 0.001
+    loss_metric:
+        values: ["cross_entropy", "focal_loss", "smoothing"]
     aug_keys:
         values:
             [
