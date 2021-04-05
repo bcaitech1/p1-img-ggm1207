@@ -14,7 +14,7 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
-from coral_pytorch.dataset import proba_to_label
+from coral_pytorch.dataset import proba_to_label, levels_from_labelbatch
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 
 from config import get_args
@@ -62,6 +62,9 @@ def train(args, model, optimizer, scheduler, scaler, loss_fn, dataloader):
 
         images, labels = images.to(args.device), labels.to(args.device)
 
+        if args.loss_metric == "coral_loss":
+            labels = levels_from_labelbatch(labels, num_classes=3)
+
         with autocast():
             outputs = model(images)
             loss = get_loss(args, loss_fn, outputs, labels)
@@ -91,15 +94,15 @@ def evaluate(args, model, loss_fn, dataloader):
         if args.loss_metric == "coral_loss":
 
             def _get_label_fn(preds):
-                proba = torch.sigmoid(preds)
-                label = proba_to_label(proba)
-                return label
+                probas = torch.sigmoid(preds)
+                labels = proba_to_label(probas)
+                return labels
 
         else:
 
             def _get_label_fn(preds):
-                label = torch.argmax(preds, dim=1)
-                return label
+                labels = torch.argmax(preds, dim=1)
+                return labels
 
         return _get_label_fn
 
