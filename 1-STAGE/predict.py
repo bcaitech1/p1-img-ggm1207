@@ -16,10 +16,8 @@ from sklearn.metrics import (
 )
 
 from config import get_args
-from prepare import get_dataloader, get_transforms, get_classes
+from prepare import get_dataloader, get_classes
 from metrics import (
-    FocalLoss,
-    get_lossfn,
     change_2d_to_1d,
     tensor_to_numpy,
     calulate_18class,
@@ -45,6 +43,7 @@ def get_all_datas(args, model, dataloader, argmax=True):
             images, labels = images.to(args.device), labels.to(args.device)
 
             preds = model(images)
+
             if argmax:
                 preds = torch.argmax(preds, dim=1)
                 preds = change_2d_to_1d(preds)
@@ -57,49 +56,44 @@ def get_all_datas(args, model, dataloader, argmax=True):
 
 
 def predict_and_logs_by_class_with_all_models(args, keys, models):
-    """ loss_fn: use same model """
+    """ return List[([mask_class], [gender_class], [age_class]]"""
 
-    final_zip_labels, final_zip_preds = [], []
-    loss_fn = get_lossfn(args).to(args.device)
+    labels_by_models, preds_by_models = [], []
 
     summary_tables = pd.DataFrame([])
     cf_images = []
 
     for model, key in zip(models, keys):
-        # mask, age, gender
+        # keys: [mask, age, gender]
+
         args.train_key = key
         _, valid_dataloader = get_dataloader(args)
 
-        all_images, all_labels, all_preds = get_all_datas(args, model, valid_dataloader)
+        images, labels, preds = get_all_datas(args, model, valid_dataloader)
 
-        #  all_images = tensor_images_to_numpy_images(all_images)
-        all_labels = tensor_to_numpy(all_labels)
-        all_preds = tensor_to_numpy(all_preds)
+        images = tensor_images_to_numpy_images(images)
+        labels, preds = tensor_to_numpy(labels), tensor_to_numpy(preds)
 
-        summary_table = log_f1_and_acc_scores(args, all_labels, all_preds)
+        summary_table = log_f1_and_acc_scores(args, labels, preds)
         summary_tables = summary_tables.append(summary_table)
 
-        fig1 = log_confusion_matrix(args, all_labels, all_preds)
-        # model for gradcam
-        fig2 = log_confusion_matrix_by_images(
-            args, model, all_images, all_labels, all_preds
-        )
+        fig1 = log_confusion_matrix(args, labels, preds)
+        fig2 = log_confusion_matrix_by_images(args, model, images, labels, preds)
 
         cf_images.append(wandb.Image(fig1))
         cf_images.append(wandb.Image(fig2))
 
-        print("cf_images:", cf_images)
         wandb.log({f"{key} Confusion Matrix": cf_images})
 
-        final_zip_labels.append(all_labels)
-        final_zip_preds.append(all_preds)
+        labels_by_models.append(labels)
+        preds_by_models.append(preds)
 
         cf_images = []
 
     summary_tables.fillna(0, inplace=True)
     summary_tables = summary_tables.applymap(lambda x: "{:,.1f}%".format(x * 100))
 
-    return summary_tables, final_zip_labels, final_zip_preds
+    return summary_tables, labels_by_models, preds_by_models
 
 
 def load_models(args):
@@ -130,6 +124,7 @@ def main(args):
     keys = ["mask", "gender", "age"]
 
     # mga: mask, gender, age (sequence)
+
     (
         summary_tables,
         mga_label_lists,

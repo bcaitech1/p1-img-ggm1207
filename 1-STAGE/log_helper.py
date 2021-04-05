@@ -41,9 +41,9 @@ def log_f1_and_acc_scores(args, labels, outputs):
     return summary_table
 
 
-def log_confusion_matrix(args, labels, preds):
+def log_confusion_matrix(args, labels, preds, title="Confusion Matrix"):
     fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(18, 9))
-    fig.suptitle("Confusion Matrix", fontsize=16)
+    fig.suptitle(title, fontsize=16)
     cmap = plt.cm.Oranges
 
     cm = confusion_matrix(labels, preds)
