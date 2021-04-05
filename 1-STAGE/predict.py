@@ -71,7 +71,6 @@ def predict_and_logs_by_class_with_all_models(args, keys, models):
 
         images, labels, preds = get_all_datas(args, model, valid_dataloader)
 
-        images = tensor_images_to_numpy_images(images)
         labels, preds = tensor_to_numpy(labels), tensor_to_numpy(preds)
 
         summary_table = log_f1_and_acc_scores(args, labels, preds)
