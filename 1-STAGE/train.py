@@ -19,8 +19,8 @@ from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_sc
 
 from config import get_args
 from predict import get_all_datas
-from prepare import get_dataloader, get_classes
 from network import ResNetClassification, get_resnet34
+from prepare import get_dataloader, get_classes, get_num_classes
 from log_helper import log_confusion_matrix_by_images, log_confusion_matrix
 
 from metrics import (
@@ -75,11 +75,13 @@ def train(args, model, optimizer, scheduler, scaler, loss_fn, dataloader):
     model.train()
     epoch_loss = 0.0
 
+    num_class = get_num_classes(args)
+
     for idx, (images, labels) in enumerate(dataloader):
         optimizer.zero_grad()
 
         if args.loss_metric == "coral_loss":
-            labels = levels_from_labelbatch(labels, num_classes=3)
+            labels = levels_from_labelbatch(labels, num_classes=num_class)
 
         images, labels = images.to(args.device), labels.to(args.device)
 
@@ -108,6 +110,7 @@ def evaluate(args, model, loss_fn, dataloader):
     all_preds = torch.tensor([]).to(args.device)
 
     get_labels = get_label_fn(args)
+    num_class = get_num_classes(args)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
@@ -115,7 +118,7 @@ def evaluate(args, model, loss_fn, dataloader):
             all_labels = torch.cat((all_labels, labels.to(args.device)))
 
             if args.loss_metric == "coral_loss":
-                labels = levels_from_labelbatch(labels, num_classes=3)
+                labels = levels_from_labelbatch(labels, num_classes=num_class)
 
             images, labels = images.to(args.device), labels.to(args.device)
             preds = model(images)

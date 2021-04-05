@@ -124,11 +124,16 @@ def get_album_transforms(args):
 
 class MaskDataSet(Dataset):
     def __init__(self, args, is_train=True, transform=None):
+        self.args = args
         csv_file = os.path.join(args.data_dir, "train.csv")
         self.datas = pd.read_csv(csv_file)
+
         self.images, self.labels = self._load_image_files_path(args, is_train)
-        self.label_idx = ["gender", "age", "mask"].index(args.train_key)
-        self.args = args
+
+        if args.train_key == "age-coral":
+            self.label_idx = 1
+        else:
+            self.label_idx = ["gender", "age", "mask"].index(args.train_key)
 
         if args.test:
             self.images, self.labels = self.images[:100], self.labels[:100]
@@ -186,8 +191,8 @@ class MaskDataSet(Dataset):
         elif age_lbl >= 30:
             age_class = 1
 
-        if args.train_key == "age-coral":
-            age_class = age_lbl
+        if self.args.train_key == "age-coral":
+            age_class = age_lbl - 18
 
         return age_class, gender_class
 

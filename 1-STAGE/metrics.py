@@ -1,3 +1,4 @@
+from albumentations.augmentations.functional import get_num_channels
 import torch
 import numpy as np
 import torch.nn as nn
@@ -7,7 +8,7 @@ from torch.autograd import Variable
 from sklearn.metrics import accuracy_score, f1_score
 
 from gradcam import GradCAMpp
-from prepare import get_classes
+from prepare import get_classes, get_num_classes
 from gradcam.utils import visualize_cam
 from coral_pytorch.losses import coral_loss
 
@@ -74,7 +75,8 @@ def get_optimizers(args, model):
 
 
 def get_lossfn(args):
-    num_classes = len(get_classes(args))
+    num_classes = get_num_classes(args)
+    print(num_classes)
 
     loss_fns = {
         "cross_entropy": nn.CrossEntropyLoss(),

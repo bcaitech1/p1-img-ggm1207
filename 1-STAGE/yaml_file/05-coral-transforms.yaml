@@ -1,0 +1,42 @@
+program: train.py
+name: "AGE-DATA-AUGMENTATION-05"
+method: bayes
+metric:
+    goal: maximize
+    name: valid_f1_score
+parameters:
+    test:
+        value: false
+    epochs:
+        value: 50
+    batch_size:
+        values: [32, 64, 128]
+    optimizer:
+        values: ["adamw", "adam", "sgd"]
+    train_key:
+        value: "age"
+    valid_size:
+        value: 0.2
+    lr:
+        min: 0.0005
+        max: 0.002
+    seed:
+        distribution: int_uniform
+        min: 1
+        max: 10000
+    loss_metric:
+        value: "coral_loss"
+    aug_keys:
+        values:
+            [
+                "FancyPCA",
+                "CLAHE",
+                "FancyPCA,CLAHE",
+                "FancyPCA,GridDist",
+                "CLAHE,GridDist",
+            ]
+early_terminate:
+    type: hyperband
+    max_iter: 50
+    s: 2
+    eta: 3
