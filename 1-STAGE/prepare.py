@@ -14,6 +14,18 @@ from torchsampler import ImbalancedDatasetSampler
 from sklearn.model_selection import StratifiedShuffleSplit
 
 from config import get_args
+from autoaugment import ImageNetPolicy
+
+
+def get_num_classes(args):
+    if args.train_key == "mask":
+        return 3
+    if args.train_key == "age":
+        return 3
+    if args.train_key == "gender":
+        return 2
+    if args.train_key == "age-coral":  # 18 ~ 60
+        return 60 - 18 + 1
 
 
 def get_classes(args):
@@ -24,6 +36,8 @@ def get_classes(args):
         return ["age < 30", "30 <= age < 60", "60 <= age"]
     if args.train_key == "gender":
         return ["male", "female"]
+    if args.train_key == "age-coral":
+        return [str(i) for i in range(18, 61)]
     raise KeyError("key must be in ['mask', 'age', 'gender']")
 
 
@@ -31,7 +45,16 @@ def get_transforms(args):
     mean = [0.485, 0.456, 0.406]
     std = [0.229, 0.224, 0.225]
 
-    transform = transforms.Compose(
+    train_transform = transforms.Compose(
+        [
+            transforms.Resize((args.image_size, args.image_size)),
+            ImageNetPolicy(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean, std),
+        ]
+    )
+
+    test_transform = transforms.Compose(
         [
             transforms.Resize((args.image_size, args.image_size)),
             transforms.ToTensor(),
@@ -39,7 +62,7 @@ def get_transforms(args):
         ]
     )
 
-    return transform
+    return train_transform, test_transform
 
 
 def get_album_transforms(args):
@@ -115,13 +138,17 @@ class MaskDataSet(Dataset):
     def __getitem__(self, idx):
 
         img = Image.open(self.images[idx])
-        img = np.array(img)  # time: 16.8463
+        #  img = np.array(img)  # time: 16.8463
+        #
+        #  if self.transform:
+        #      img = self.transform(image=img)["image"]
+        #
+        #  # Share Memory
+        #  img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
 
         if self.transform:
-            img = self.transform(image=img)["image"]
+            img = self.transform(img)
 
-        # Share Memory
-        img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
         lbl = self._get_label(idx)
 
         return img, lbl
@@ -159,6 +186,9 @@ class MaskDataSet(Dataset):
         elif age_lbl >= 30:
             age_class = 1
 
+        if args.train_key == "age-coral":
+            age_class = age_lbl
+
         return age_class, gender_class
 
     def _load_image_files_path(self, args, is_train):
@@ -194,7 +224,8 @@ class MaskDataSet(Dataset):
 
 
 def get_dataloader(args):
-    train_transform, test_transform = get_album_transforms(args)
+    #  train_transform, test_transform = get_album_transforms(args)
+    train_transform, test_transform = get_transforms(args)
 
     train_dataset = MaskDataSet(args, is_train=True, transform=train_transform)
     valid_dataset = MaskDataSet(args, is_train=False, transform=test_transform)

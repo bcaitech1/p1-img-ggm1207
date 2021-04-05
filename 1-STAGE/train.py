@@ -36,6 +36,7 @@ from log_helper import plots_result
 
 warnings.filterwarnings(action="ignore")
 
+
 def get_label_fn(args):
 
     if args.loss_metric == "coral_loss":
@@ -52,6 +53,7 @@ def get_label_fn(args):
             return labels
 
     return _get_label_fn
+
 
 def init_weights(m):
     for name, param in m.named_parameters():
@@ -104,7 +106,6 @@ def evaluate(args, model, loss_fn, dataloader):
 
     all_labels = torch.tensor([]).to(args.device)
     all_preds = torch.tensor([]).to(args.device)
-
 
     get_labels = get_label_fn(args)
 
@@ -216,7 +217,7 @@ def run(
         )  # return same shape tensor
         images = tensor_images_to_numpy_images(images, renormalize=False)
         labels = tensor_to_numpy(labels)
-        
+
         preds = tensor_to_numpy(preds)
 
         #  fig = plots_result(args, images, labels, preds, sup_titles[idx])
@@ -236,7 +237,7 @@ def main(args):
 
     train_dataloader, test_dataloader = get_dataloader(args)
 
-    num_class = len(get_classes(args))
+    num_class = get_num_classes(args)
 
     #  model = ResNetClassification(args, num_class).to(args.device)
     model = get_resnet34(args, num_class).to(args.device)
