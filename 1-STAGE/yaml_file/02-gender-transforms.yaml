@@ -1,6 +1,6 @@
 program: train.py
 name: "GENDER-DATA-AUGMENTATION-03"
-method: bayes
+method: grid
 metric:
     goal: minimize
     name: valid_f1_score
@@ -8,11 +8,11 @@ parameters:
     test:
         value: false
     epochs:
-        value: 35
+        value: 15
     batch_size:
         value: 64
     optimizer:
-        values: ["adamw", "adam", "sgd"]
+        values: ["adamw"]
     train_key:
         value: "gender"
     valid_size:
@@ -31,6 +31,6 @@ parameters:
             ]
 early_terminate:
     type: hyperband
-    max_iter: 35
+    max_iter: 15
     s: 2
     eta: 3
