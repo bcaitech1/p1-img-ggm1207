@@ -182,7 +182,7 @@ def plots_result(args, images, labels, outputs, title="plots_result"):
 
         pred_label = np.argmax(output)
         true_label = label
-
+        
         _log_plots_image(
             axes[num_row][num_col * 2], image, output, pred_label, true_label, classes
         )

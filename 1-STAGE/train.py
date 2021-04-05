@@ -36,6 +36,22 @@ from log_helper import plots_result
 
 warnings.filterwarnings(action="ignore")
 
+def get_label_fn(args):
+
+    if args.loss_metric == "coral_loss":
+
+        def _get_label_fn(preds):
+            probas = torch.sigmoid(preds)
+            labels = proba_to_label(probas)
+            return labels
+
+    else:
+
+        def _get_label_fn(preds):
+            labels = torch.argmax(preds, dim=1)
+            return labels
+
+    return _get_label_fn
 
 def init_weights(m):
     for name, param in m.named_parameters():
@@ -60,10 +76,10 @@ def train(args, model, optimizer, scheduler, scaler, loss_fn, dataloader):
     for idx, (images, labels) in enumerate(dataloader):
         optimizer.zero_grad()
 
-        images, labels = images.to(args.device), labels.to(args.device)
-
         if args.loss_metric == "coral_loss":
             labels = levels_from_labelbatch(labels, num_classes=3)
+
+        images, labels = images.to(args.device), labels.to(args.device)
 
         with autocast():
             outputs = model(images)
@@ -89,29 +105,18 @@ def evaluate(args, model, loss_fn, dataloader):
     all_labels = torch.tensor([]).to(args.device)
     all_preds = torch.tensor([]).to(args.device)
 
-    def get_label_fn(args):
-
-        if args.loss_metric == "coral_loss":
-
-            def _get_label_fn(preds):
-                probas = torch.sigmoid(preds)
-                labels = proba_to_label(probas)
-                return labels
-
-        else:
-
-            def _get_label_fn(preds):
-                labels = torch.argmax(preds, dim=1)
-                return labels
-
-        return _get_label_fn
 
     get_labels = get_label_fn(args)
 
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
-            images, labels = images.to(args.device), labels.to(args.device)
 
+            all_labels = torch.cat((all_labels, labels.to(args.device)))
+
+            if args.loss_metric == "coral_loss":
+                labels = levels_from_labelbatch(labels, num_classes=3)
+
+            images, labels = images.to(args.device), labels.to(args.device)
             preds = model(images)
 
             loss = get_loss(args, loss_fn, preds, labels)
@@ -121,7 +126,6 @@ def evaluate(args, model, loss_fn, dataloader):
             preds = get_labels(preds)
             preds = change_2d_to_1d(preds)
 
-            all_labels = torch.cat((all_labels, labels))
             all_preds = torch.cat((all_preds, preds))
 
     return epoch_loss / len(dataloader), all_labels, all_preds
@@ -196,13 +200,10 @@ def run(
     fig = log_confusion_matrix(args, labels, preds)
     wandb.log({"Valid Confusion Matirx": fig})
 
-    #  images, labels, preds = get_all_datas(args, model, test_dataloader)
-    #
-    #  fig = log_confusion_matrix_by_images(args, model, images, labels, preds)
-    #  wandb.log({"Valid Image Confusion Matirx": fig})
-
     example_images = []
     sup_titles = ["TRAIN", "VALIDATION"]
+
+    get_labels = get_label_fn(args)
 
     for idx, dataloader in enumerate([train_dataloader, test_dataloader]):
         images, labels = next(iter(dataloader))
@@ -215,10 +216,11 @@ def run(
         )  # return same shape tensor
         images = tensor_images_to_numpy_images(images, renormalize=False)
         labels = tensor_to_numpy(labels)
+        
         preds = tensor_to_numpy(preds)
 
-        fig = plots_result(args, images, labels, preds, sup_titles[idx])
-        example_images.append(wandb.Image(fig))
+        #  fig = plots_result(args, images, labels, preds, sup_titles[idx])
+        #  example_images.append(wandb.Image(fig))
 
     wandb.log({"Traininig Visualization": example_images})
 
