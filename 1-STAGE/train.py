@@ -5,6 +5,7 @@ import math
 import pickle
 import random
 import warnings
+import functools
 from datetime import datetime
 
 import wandb
@@ -13,6 +14,7 @@ import numpy as np
 import torch.nn as nn
 import torch.optim as optim
 from torch.cuda.amp import GradScaler, autocast
+from coral_pytorch.dataset import proba_to_label
 from sklearn.metrics import f1_score, accuracy_score, precision_score, recall_score
 
 from config import get_args
@@ -84,6 +86,25 @@ def evaluate(args, model, loss_fn, dataloader):
     all_labels = torch.tensor([]).to(args.device)
     all_preds = torch.tensor([]).to(args.device)
 
+    def get_label_fn(args):
+
+        if args.loss_metric == "coral_loss":
+
+            def _get_label_fn(preds):
+                proba = torch.sigmoid(preds)
+                label = proba_to_label(proba)
+                return label
+
+        else:
+
+            def _get_label_fn(preds):
+                label = torch.argmax(preds, dim=1)
+                return label
+
+        return _get_label_fn
+
+    get_labels = get_label_fn(args)
+
     with torch.no_grad():
         for idx, (images, labels) in enumerate(dataloader):
             images, labels = images.to(args.device), labels.to(args.device)
@@ -93,7 +114,8 @@ def evaluate(args, model, loss_fn, dataloader):
             loss = get_loss(args, loss_fn, preds, labels)
             epoch_loss += loss.item()
 
-            preds = torch.argmax(preds, dim=1)
+            #  preds = torch.argmax(preds, dim=1)
+            preds = get_labels(preds)
             preds = change_2d_to_1d(preds)
 
             all_labels = torch.cat((all_labels, labels))
@@ -211,8 +233,8 @@ def main(args):
 
     num_class = len(get_classes(args))
 
-    #  model = ResNetClassification(num_class).to(args.device)
-    model = get_resnet34(num_class).to(args.device)
+    #  model = ResNetClassification(args, num_class).to(args.device)
+    model = get_resnet34(args, num_class).to(args.device)
     model.apply(init_weights)
     wandb.watch(model)
 
@@ -246,7 +268,7 @@ if __name__ == "__main__":
     torch.manual_seed(args.seed)
     torch.cuda.manual_seed(args.seed)
 
-    torch.cuda.manual_seed_all(args.seed) # if use multi-GPU
+    torch.cuda.manual_seed_all(args.seed)  # if use multi-GPU
 
     # 연산 처리 속도가 감소된다고 한다.
     torch.backends.cudnn.deterministic = True

@@ -6,9 +6,10 @@ import torch.nn.functional as F
 from torch.autograd import Variable
 from sklearn.metrics import accuracy_score, f1_score
 
-from gradcam.utils import visualize_cam
 from gradcam import GradCAMpp
 from prepare import get_classes
+from gradcam.utils import visualize_cam
+from coral_pytorch.losses import coral_loss
 
 MEAN = np.array([0.485, 0.456, 0.406]).reshape(-1, 1, 1)
 STD = np.array([0.229, 0.224, 0.225]).reshape(-1, 1, 1)
@@ -79,7 +80,8 @@ def get_lossfn(args):
         "cross_entropy": nn.CrossEntropyLoss(),
         "f1_loss": F1Loss(classes=num_classes),
         "focal_loss": FocalLoss(gamma=3),
-        "smoothing": LabelSmoothingLoss(classes=num_classes, smoothing=0.3),
+        "smoothing": LabelSmoothingLoss(classes=num_classes, smoothing=0.1),
+        "coral_loss": coral_loss,
     }
 
     loss_fn = loss_fns[args.loss_metric]
