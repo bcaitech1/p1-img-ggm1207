@@ -6,20 +6,20 @@ metric:
 parameters:
     test:
         value: false
+    model_path:
+        value: /opt/ml/best_weights
     valid_size:
         value: 0.2
-    model_path: 
-        value: "/opt/ml/best_weights/"
     age_model:
         values: [
-            'age-04051654-dulcet-sweep-17.pt',
+            age-04051654-dulcet-sweep-17,
             ]
     gender_model:
         values: [
-            'gender-04051631-floral-sweep-7',
-            'gender-04050240-pretty-sweep-4'
+            gender-04050240-pretty-sweep-4,
+            gender-04051631-floral-sweep-7
             ]
     mask_model:
         values: [
-            'mask-04051658-rich-sweep-17',
+            mask-04051658-rich-sweep-17,
             ]
