@@ -20,7 +20,7 @@ from prepare import get_dataloader, get_classes
 from metrics import (
     change_2d_to_1d,
     tensor_to_numpy,
-    calulate_18class,
+    calculate_18class,
     tensor_images_to_numpy_images,
 )
 
@@ -133,10 +133,10 @@ def main(args):
     labels, preds = [], []
 
     for (mi, gi, ai) in zip(*mga_label_lists):
-        labels.append(calulate_18class(mi, gi, ai))
+        labels.append(calculate_18class(mi, gi, ai))
 
     for (mi, gi, ai) in zip(*mga_output_lists):
-        preds.append(calulate_18class(mi, gi, ai))
+        preds.append(calculate_18class(mi, gi, ai))
 
     ac_sco = accuracy_score(labels, preds)
     f1_sco = f1_score(labels, preds, average="macro")

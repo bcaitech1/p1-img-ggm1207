@@ -194,10 +194,12 @@ def run(
         print(f"\tValidation f1 score: {f1_sco:.3f}")
         print(f"\tValidation Acc: {ac_sco:.3f}")
         print()
-    # Lsat Visualization
+
+    # Last Visualization
     model = torch.load(model_save_path).to(args.device)
 
     _, labels, preds = evaluate(args, model, loss_fn, test_dataloader)
+
     labels = tensor_to_numpy(labels)
     preds = tensor_to_numpy(preds)
 

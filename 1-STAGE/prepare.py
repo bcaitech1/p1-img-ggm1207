@@ -229,8 +229,8 @@ class MaskDataSet(Dataset):
 
 
 def get_dataloader(args):
-    #  train_transform, test_transform = get_album_transforms(args)
-    train_transform, test_transform = get_transforms(args)
+    train_transform, test_transform = get_album_transforms(args)
+    #  train_transform, test_transform = get_transforms(args)
 
     train_dataset = MaskDataSet(args, is_train=True, transform=train_transform)
     valid_dataset = MaskDataSet(args, is_train=False, transform=test_transform)

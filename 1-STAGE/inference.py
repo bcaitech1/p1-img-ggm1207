@@ -1,6 +1,7 @@
 """ 모델을 Load한 후 전체 데이터에 대해서 다시 학습 한 후 Inference 실행 """
 
 import os
+import json
 from PIL import Image
 
 import torch
@@ -9,27 +10,33 @@ import torch.nn as nn
 
 from train import evaluate
 from config import get_args
+from train import main
+from predict import load_models
+from metrics import calculate_18class
 from prepare import get_dataloader, get_transforms
 
 
-def eval_class(mi, gi, ai):
-    return 6 * mi + 3 * gi + ai
+def load_args(model_path):
+    arg_path = os.path.join(args.model_path[:-3], "args")
+    with open(arg_path, "r") as f:
+        args = json.loads(f.readline())
+    return args
+
+
+def retrain(args, keys, models):
+
+    for key, model in zip(keys, models):
+
+        args = load_args(args.model_path)
+        args
+        train_dataloader, valid_dataloader = get_dataloader
+        _retrain(args)
+
+    pass
 
 
 def main(args):
-    print(args)
-
-    try:
-        age_model = torch.load(args.age_model)
-        gender_model = torch.load(args.gender_model)
-        mask_model = torch.load(args.mask_model)
-    except Exception as e:
-        print(e)
-        raise "Failed Model load"
-
-    age_model.eval()
-    gender_model.eval()
-    mask_model.eval()
+    models = load_models(args)
 
     _, transform = get_transforms(args)
 

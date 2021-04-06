@@ -30,7 +30,7 @@ def change_2d_to_1d(tens):
 #      return age_logit.type(torch.long)
 
 
-def calulate_18class(mi, gi, ai):
+def calculate_18class(mi, gi, ai):
     return 6 * mi + 3 * gi + ai
 
 
