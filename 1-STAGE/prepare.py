@@ -165,6 +165,11 @@ class MaskDataSet(Dataset):
         return self.labels[idx][self.label_idx]
 
     def _load_dataframe(self, args, is_train):
+
+        if args.valid_size == 0:
+            return self.datas
+
+
         split = StratifiedShuffleSplit(
             n_splits=1,
             test_size=args.valid_size,

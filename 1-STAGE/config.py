@@ -38,6 +38,7 @@ def get_args():
     pa("--lr", type=float, default=0.001, help="learning rate, default=0.0002")
     pa("--use_only_mask", type=str2bool, default=False, help="mask쓴 데이터만 구성")
     pa("--loss_metric", type=str, default="f1_loss", help="로스 설정")
+    pa("--eval", type=str2bool, default=True, help="validation 하는지")
     pa(
         "--train_key",
         type=str,
@@ -58,7 +59,7 @@ def get_args():
 
     age_model_path = "kage" if args.use_only_mask else args.age_model
 
-    args.age_model = os.path.join(args.model_path, f"{args.age_model}.pt")
+    args.age_model = os.path.join(args.model_path, f"{age_model_path}.pt")
     args.gender_model = os.path.join(args.model_path, f"{args.gender_model}.pt")
     args.mask_model = os.path.join(args.model_path, f"{args.mask_model}.pt")
 

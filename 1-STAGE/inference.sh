@@ -1,5 +1,6 @@
 python3 inference.py \
-    --age_model 03301959-dry-sweep-2 \
-    --gender_model 03310033-celestial-sweep-9 \
-    --mask_model mask \
-    --filename 98acc
+    --model_path /opt/ml/best_weights \
+    --age_model age-04051654-dulcet-sweep-17 \
+    --gender_model gender-04051631-floral-sweep-7 \
+    --mask_model mask-04051658-rich-sweep-17 \
+    --filename bong_0406

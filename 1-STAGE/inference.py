@@ -16,7 +16,7 @@ from prepare import get_dataloader, get_transforms
 
 
 def load_args(model_path):
-    arg_path = os.path.join(args.model_path[:-3], "args")
+    arg_path = model_path[:-2] + "args"
     with open(arg_path, "r") as f:
         args = json.loads(f.readline())
     return args
@@ -24,7 +24,8 @@ def load_args(model_path):
 
 def retrain(args):
     """ args.*_model """
-
+    
+    print(args)
     model_pathes = [args.age_model, args.gender_model, args.mask_model]
 
     for model_path in model_pathes:
@@ -32,10 +33,10 @@ def retrain(args):
 
         train_args["valid_size"] = 0
         train_args["model_path"] = "/opt/ml/inference_weights/"
-        train_args["epochs"] = 1
+        train_args["epochs"] = 100
+        train_args["eval"] = False
 
         train.main(train_args)
-
 
 def main(args):
 

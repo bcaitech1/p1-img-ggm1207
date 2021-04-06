@@ -153,49 +153,61 @@ def run(
         train_loss = train(
             args, model, optimizer, scheduler, scaler, loss_fn, train_dataloader
         )
-        valid_loss, label_list, output_list = evaluate(
-            args, model, loss_fn, test_dataloader
-        )
-
-        if valid_loss < best_valid_loss:
-            best_valid_loss = valid_loss
-            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
-            torch.save(model, model_save_path)
-
-            with open(model_save_path[:-2] + "args", "w") as f:
-                json.dump(dict(args), f)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-
-        output_list = tensor_to_numpy(output_list)
-        label_list = tensor_to_numpy(label_list)
-
-        f1_sco = f1_score(output_list, label_list, average="macro")
-        pr_sco = precision_score(output_list, label_list, average="macro")
-        re_sco = recall_score(output_list, label_list, average="macro")
-        ac_sco = accuracy_score(output_list, label_list)
-
-        wandb.log(
-            {
-                "train_loss": train_loss,
-                "valid_loss": valid_loss,
-                "valid_f1_score": f1_sco,
-                "valid_pr_score": pr_sco,
-                "valid_re_score": re_sco,
-                "valid_accuracy": ac_sco,
-                "epoch": epoch,
-            }
-        )
-
+        
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
-        print(f"\tValidation Loss: {valid_loss:.3f}")
-        print(f"\tValidation f1 score: {f1_sco:.3f}")
-        print(f"\tValidation Acc: {ac_sco:.3f}")
-        print()
+
+        if args.eval:
+
+            valid_loss, label_list, output_list = evaluate(
+                args, model, loss_fn, test_dataloader
+            )
+
+            if valid_loss < best_valid_loss:
+                best_valid_loss = valid_loss
+                model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
+                torch.save(model, model_save_path)
+
+                with open(model_save_path[:-2] + "args", "w") as f:
+                    json.dump(dict(args), f)
+
+            end_time = time.time()
+            epoch_mins, epoch_secs = epoch_time(start_time, end_time)
+
+            output_list = tensor_to_numpy(output_list)
+            label_list = tensor_to_numpy(label_list)
+
+            f1_sco = f1_score(output_list, label_list, average="macro")
+            pr_sco = precision_score(output_list, label_list, average="macro")
+            re_sco = recall_score(output_list, label_list, average="macro")
+            ac_sco = accuracy_score(output_list, label_list)
+
+            wandb.log(
+                {
+                    "train_loss": train_loss,
+                    "valid_loss": valid_loss,
+                    "valid_f1_score": f1_sco,
+                    "valid_pr_score": pr_sco,
+                    "valid_re_score": re_sco,
+                    "valid_accuracy": ac_sco,
+                    "epoch": epoch,
+                }
+            )
+
+            print(f"\tValidation Loss: {valid_loss:.3f}")
+            print(f"\tValidation f1 score: {f1_sco:.3f}")
+            print(f"\tValidation Acc: {ac_sco:.3f}")
+            print()
 
     # Last Visualization
+    if not args.eval:
+        model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
+        torch.save(model, model_save_path)
+        return
+
     model = torch.load(model_save_path).to(args.device)
 
     _, labels, preds = evaluate(args, model, loss_fn, test_dataloader)
@@ -234,11 +246,13 @@ def run(
 def main(args):
     wandb.init(project="p-stage-1", reinit=True)
     wandb.config.update(args)
+
+    args = wandb.config
+
     wandb.run.name = (
         f"{args.train_key}-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
     )
 
-    args = wandb.config
 
     train_dataloader, test_dataloader = get_dataloader(args)
 
