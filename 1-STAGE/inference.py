@@ -8,9 +8,8 @@ import torch
 import pandas as pd
 import torch.nn as nn
 
-from train import evaluate
+import train
 from config import get_args
-from train import main
 from predict import load_models
 from metrics import calculate_18class
 from prepare import get_dataloader, get_transforms
@@ -23,47 +22,49 @@ def load_args(model_path):
     return args
 
 
-def retrain(args, keys, models):
+def retrain(args):
+    """ args.*_model """
 
-    for key, model in zip(keys, models):
+    model_pathes = [args.age_model, args.gender_model, args.mask_model]
 
-        args = load_args(args.model_path)
-        args
-        train_dataloader, valid_dataloader = get_dataloader
-        _retrain(args)
+    for model_path in model_pathes:
+        train_args = load_args(model_path)
 
-    pass
+        train_args["valid_size"] = 0
+        train_args["model_path"] = "/opt/ml/inference_weights/"
+        train_args["epochs"] = 1
+
+        train.main(train_args)
 
 
 def main(args):
-    models = load_models(args)
 
-    _, transform = get_transforms(args)
+    retrain(args)
 
-    eval_dir = "/opt/ml/input/data/eval/"
-    eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
-
-    for idx, image_base_path in enumerate(eval_df["ImageID"]):
-        image_full_path = os.path.join(eval_dir, "images", image_base_path)
-        image = Image.open(image_full_path)
-        image = transform(image).unsqueeze(0).cuda()
-
-        age_label = age_model(image)
-        gender_label = gender_model(image)
-        mask_label = mask_model(image)
-
-        age_class = torch.argmax(age_label, dim=1)
-        gender_class = torch.argmax(gender_label, dim=1)
-        mask_class = torch.argmax(mask_label, dim=1)
-
-        res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
-        eval_df.iloc[idx, 1] = res
-
-        print(idx, end="\r")
-
-    sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
-    sub_path = os.path.join(sub_path, f"{args.inf_filename}-submission.csv")
-    eval_df.to_csv(sub_path, index=False)
+    #  eval_dir = "/opt/ml/input/data/eval/"
+    #  eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
+    #
+    #  for idx, image_base_path in enumerate(eval_df["ImageID"]):
+    #      image_full_path = os.path.join(eval_dir, "images", image_base_path)
+    #      image = Image.open(image_full_path)
+    #      image = transform(image).unsqueeze(0).cuda()
+    #
+    #      age_label = age_model(image)
+    #      gender_label = gender_model(image)
+    #      mask_label = mask_model(image)
+    #
+    #      age_class = torch.argmax(age_label, dim=1)
+    #      gender_class = torch.argmax(gender_label, dim=1)
+    #      mask_class = torch.argmax(mask_label, dim=1)
+    #
+    #      res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
+    #      eval_df.iloc[idx, 1] = res
+    #
+    #      print(idx, end="\r")
+    #
+    #  sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
+    #  sub_path = os.path.join(sub_path, f"{args.inf_filename}-submission.csv")
+    #  eval_df.to_csv(sub_path, index=False)
 
 
 if __name__ == "__main__":
