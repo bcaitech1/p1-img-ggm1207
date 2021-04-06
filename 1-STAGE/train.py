@@ -158,8 +158,8 @@ def run(
         )
 
         if valid_loss < best_valid_loss:
-            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
             best_valid_loss = valid_loss
+            model_save_path = os.path.join(args.model_path, f"{wandb.run.name}.pt")
             torch.save(model, model_save_path)
 
             with open(model_save_path[:-2] + "args", "w") as f:
