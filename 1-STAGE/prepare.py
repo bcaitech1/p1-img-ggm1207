@@ -143,16 +143,16 @@ class MaskDataSet(Dataset):
     def __getitem__(self, idx):
 
         img = Image.open(self.images[idx])
-        #  img = np.array(img)  # time: 16.8463
-        #
-        #  if self.transform:
-        #      img = self.transform(image=img)["image"]
-        #
-        #  # Share Memory
-        #  img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
+        img = np.array(img)  # time: 16.8463
 
         if self.transform:
-            img = self.transform(img)
+            img = self.transform(image=img)["image"]
+
+        # Share Memory
+        img = np.transpose(img, axes=(2, 0, 1))  # (w, h, c) +> (c, w, h)
+
+        #  if self.transform:
+        #      img = self.transform(img)
 
         lbl = self._get_label(idx)
 
