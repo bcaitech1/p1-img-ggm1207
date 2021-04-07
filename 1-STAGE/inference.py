@@ -24,7 +24,7 @@ def load_args(model_path):
 
 def retrain(args):
     """ args.*_model """
-    
+
     print(args)
     model_pathes = [args.age_model, args.gender_model, args.mask_model]
 
@@ -38,34 +38,39 @@ def retrain(args):
 
         train.main(train_args)
 
+
 def main(args):
 
-    retrain(args)
+    #  retrain(args)
 
-    #  eval_dir = "/opt/ml/input/data/eval/"
-    #  eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
-    #
-    #  for idx, image_base_path in enumerate(eval_df["ImageID"]):
-    #      image_full_path = os.path.join(eval_dir, "images", image_base_path)
-    #      image = Image.open(image_full_path)
-    #      image = transform(image).unsqueeze(0).cuda()
-    #
-    #      age_label = age_model(image)
-    #      gender_label = gender_model(image)
-    #      mask_label = mask_model(image)
-    #
-    #      age_class = torch.argmax(age_label, dim=1)
-    #      gender_class = torch.argmax(gender_label, dim=1)
-    #      mask_class = torch.argmax(mask_label, dim=1)
-    #
-    #      res = eval_class(mask_class.item(), gender_class.item(), age_class.item())
-    #      eval_df.iloc[idx, 1] = res
-    #
-    #      print(idx, end="\r")
-    #
-    #  sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
-    #  sub_path = os.path.join(sub_path, f"{args.inf_filename}-submission.csv")
-    #  eval_df.to_csv(sub_path, index=False)
+    _, transform = get_transforms(args)
+
+    mask_model, gender_model, age_model = load_models(args)
+
+    eval_dir = "/opt/ml/input/data/eval/"
+    eval_df = pd.read_csv(os.path.join(eval_dir, "info.csv"))
+
+    for idx, image_base_path in enumerate(eval_df["ImageID"]):
+        image_full_path = os.path.join(eval_dir, "images", image_base_path)
+        image = Image.open(image_full_path)
+        image = transform(image).unsqueeze(0).cuda()
+
+        age_label = age_model(image)
+        gender_label = gender_model(image)
+        mask_label = mask_model(image)
+
+        age_class = torch.argmax(age_label, dim=1)
+        gender_class = torch.argmax(gender_label, dim=1)
+        mask_class = torch.argmax(mask_label, dim=1)
+
+        res = calculate_18class(mask_class.item(), gender_class.item(), age_class.item())
+        eval_df.iloc[idx, 1] = res
+
+        print(idx, end="\r")
+
+    sub_path = "/opt/ml/P-Stage/1-STAGE/submissions"
+    sub_path = os.path.join(sub_path, f"{args.inf_filename}-submission.csv")
+    eval_df.to_csv(sub_path, index=False)
 
 
 if __name__ == "__main__":

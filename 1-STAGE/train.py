@@ -156,7 +156,7 @@ def run(
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-        
+
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
         print(f"\tTrain Loss: {train_loss:.3f}")
 
@@ -252,7 +252,6 @@ def main(args):
     wandb.run.name = (
         f"{args.train_key}-{datetime.now().strftime('%m%d%H%M')}-{wandb.run.name}"
     )
-
 
     train_dataloader, test_dataloader = get_dataloader(args)
 

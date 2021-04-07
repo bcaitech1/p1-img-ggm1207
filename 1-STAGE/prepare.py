@@ -169,7 +169,6 @@ class MaskDataSet(Dataset):
         if args.valid_size == 0:
             return self.datas
 
-
         split = StratifiedShuffleSplit(
             n_splits=1,
             test_size=args.valid_size,
@@ -191,7 +190,7 @@ class MaskDataSet(Dataset):
         gender_class = ["male", "female"].index(gender_lbl)
         age_class = 0
 
-        if age_lbl >= 60:
+        if age_lbl >= 58: # TODO: TODO: TODO
             age_class = 2
         elif age_lbl >= 30:
             age_class = 1

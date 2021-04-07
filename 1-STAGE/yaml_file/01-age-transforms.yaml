@@ -1,6 +1,6 @@
 program: train.py
-name: "AGE-DATA-AUGMENTATION-03"
-method: grid
+name: "AGE-FOR-ENSEMBLE-58Filter"
+method: random
 metric:
     goal: minimize
     name: valid_f1_score
@@ -8,30 +8,28 @@ parameters:
     test:
         value: false
     epochs:
-        value: 15
+        value: 50
     batch_size:
-        value: 64
+        values: [32, 64, 128]
     optimizer:
-        values: ["adamw"]
+        values: ["adamw", "adam"]
     train_key:
         value: "age"
     valid_size:
-        value: 0.2
+        value: 0.15
     lr:
-        value: 0.001
+        min: 0.0005
+        max: 0.002
     loss_metric:
-        values: ["cross_entropy", "f1_loss", "focal_loss", "smoothing"]
+        values: ["cross_entropy", "smoothing"]
+    seed:
+        distribution: int_uniform
+        min: 1
+        max: 10000
     aug_keys:
-        values:
-            [
-                "FancyPCA",
-                "CLAHE",
-                "FancyPCA,CLAHE",
-                "FancyPCA,GridDist",
-                "CLAHE,GridDist",
-            ]
+        value: "CLAHE,GridDist"
 early_terminate:
     type: hyperband
-    max_iter: 15
+    max_iter: 50
     s: 2
     eta: 3
