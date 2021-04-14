@@ -1,7 +1,9 @@
+import random
 import argparse
 import os.path as p
-
 from functools import partial
+
+import torch
 
 
 def str2bool(v):
@@ -19,28 +21,43 @@ def get_args():
     parser = argparse.ArgumentParser(description="2-stage hypterparameter")
     pa = partial(parser.add_argument)
 
+    # pathes
+    pa("--output_dir", default="./results")
+    pa(
+        "--weight_dir",
+        default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights",
+    )
+    pa("--data_dir", default="/home/j-gunmo/storage/data/input/data/")
+    pa("--data_kind", default="dataset_v1")
+    pa("--strategy", default="st01")
+
     # ops hypterparameter: Uses when (not training)
 
-    pa("--num_labels", default=42)
-    pa("--save_steps", default=500)
-    pa("--logging_steps", default=100)
-    pa("--save_total_limit", default=3)
-    pa("--logging_dir", default="./logs")
-    pa("--output_dir", default="./results", type=str)
+    pa("--debug", default=False, type=str2bool)
+    pa("--num_labels", default=42, type=int)
+    pa("--dataset_idx", default=0)
+
+    # early stopping
+    pa("--patience", default=5, type=int)
+    pa("--delta", default=0, type=int)
+
+    # train hypterparameters: Uses when training
+
+    pa("--ms_name", default="kobert")
     pa("--model_name_or_path", default="bert-base-multilingual-cased")
-    pa("--data_dir", default="/home/j-gunmo/storage/data/input/data/", type=str)
 
-    # train hypterparameter: Uses when training
-
-    pa("--warmup_steps", default=500)
-    pa("--weight_decay", default=0.01)
-    pa("--learning_rate", default=5e-5)
-    pa("--num_train_epochs", default=4)
-    pa("--evaluation_strategy", default="epoch")
-    pa("--per_device_eval_batch_size", default=16)
-    pa("--per_device_train_batch_size", default=16)
+    pa("--epochs", default=50, type=int)
+    pa("--optimizer", default="adamw")
+    pa("--scheduler", default="step_lr")
+    pa("--sampler", default="random")
+    pa("--batch_size", default=32, type=int)
+    pa("--warmup_steps", default=500, type=int)
+    pa("--weight_decay", default=0.01, type=float)
+    pa("--learning_rate", default=5e-5, type=float)
+    pa("--max_seq_length", default=100, type=int)
 
     # parsing
     args, unknown = parser.parse_known_args()
+    args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
     return args

@@ -1,89 +1,175 @@
+import os
 import pickle
+import random
 import os.path as p
 
 import torch
 import pandas as pd
-from torch.utils.data import DataLoader, Dataset
-from transformers import AutoTokenizer
+from torch.utils.data import Dataset, DataLoader
 
 
 class RE_Dataset(Dataset):
-    """ 어디서 사용되는 거지? """
-
-    def __init__(self, tokenized_dataset, labels):
+    def __init__(self, tokenized_dataset):
         self.tokenized_dataset = tokenized_dataset
-        self.labels = labels
 
     def __getitem__(self, idx):
-        item = {
-            key: torch.tensor(val[idx]) for key, val in self.tokenized_dataset.items()
-        }
-        item["labels"] = torch.tensor(self.labels[idx])
+        item = {key: val[idx] for key, val in self.tokenized_dataset.items()}
         return item
 
     def __len__(self):
-        return len(self.labels)
+        return len(self.tokenized_dataset["label_ids"])
 
 
-def preprocessing_dataset(dataset, label_type):
-    """ 원하는 형태의 dataset으로 전처리 """
-    label = []
-    for i in dataset[8]:
-        if i == "blind":
-            label.append(100)
-        else:
-            label.append(label_type[i])
+def pick_one_dataset(args, is_train=True):
+    data_path = p.join(args.data_dir, args.data_kind)
 
-    out_dataset = pd.DataFrame(
-        {"sentence": dataset[1], "entity_01": dataset[2], "entity_02": dataset[5]}
+    if is_train:
+        idx = args.dataset_idx
+
+        train_path = p.join(data_path, f"train-{idx}.pkl")
+        valid_path = p.join(data_path, f"valid-{idx}.pkl")
+
+        with open(train_path, "rb") as f:
+            train_dataset = pickle.load(f)
+
+        with open(valid_path, "rb") as f:
+            valid_dataset = pickle.load(f)
+
+        return train_dataset, valid_dataset
+    else:
+        test_path = p.join(data_path, f"test.pkl")
+
+        with open(test_path, "rb") as f:
+            test_dataset = pickle.load(f)
+
+        return test_dataset
+
+
+def load_dataloader(args, tokenizer):
+    train_dataset, valid_dataset = pick_one_dataset(args, is_train=True)
+
+    tt_dataset = tokenized_dataset(args, train_dataset, tokenizer)
+    tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
+
+    re_tt_dataset = RE_Dataset(tt_dataset)
+    re_tv_dataset = RE_Dataset(tv_dataset)
+
+    train_dataloader = DataLoader(
+        re_tt_dataset,
+        batch_size=args.batch_size,
+        shuffle=True,
+        pin_memory=True,
+        num_workers=4,
     )
 
-    return out_dataset, label
-
-
-def load_data(args, is_train=True):
-    set_type = "train" if is_train else "test"
-
-    label_path = p.join(args.data_dir, "label_type.pkl")
-    file_path = p.join(args.data_dir, f"{set_type}.tsv")
-
-    with open(label_path, "rb") as f:
-        label_type = pickle.load(f)
-
-    dataset = pd.read_csv(file_path, delimiter="\t", header=None)  # 왜 Tab으로 나눴을까?
-    dataset, label = preprocessing_dataset(dataset, label_type)
-
-    return dataset, label
-
-
-def tokenized_dataset(dataset, tokenizer):
-    concat_entity = []
-
-    for e01, e02 in zip(dataset["entity_01"], dataset["entity_02"]):
-        temp = ""
-        temp = e01 + "[SEP]" + e02
-        concat_entity.append(temp)
-
-    tokenized_sentences = tokenizer(
-        concat_entity,
-        list(dataset["sentence"]),
-        return_tensors="pt",
-        padding=True,
-        truncation=True,
-        max_length=100,
-        add_special_tokens=True,
+    test_dataloader = DataLoader(
+        re_tv_dataset,
+        batch_size=args.batch_size,
+        shuffle=False,
+        pin_memory=True,
+        num_workers=4,
     )
+
+    return train_dataloader, test_dataloader
+
+
+def tokenized_dataset(args, dataset, tokenizer):
+    # dataset keywords: "words", "e1", "e2", "labels"
+
+    all_input_ids = []
+    all_token_type_ids = []
+    all_attention_mask = []
+    all_label_ids = []
+
+    special_tokens_count = 1  # 사실 4개임
+
+    for idx, (e01, e02, words, label) in enumerate(
+        zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
+    ):
+        tokens = ["[CLS]", e01, "[SEP]", e02, "[SEP]"] + words
+        all_label_ids.append(label)
+
+        if len(tokens) > args.max_seq_length - special_tokens_count:
+            tokens = tokens[: (args.max_seq_length - special_tokens_count)]
+
+        tokens += ["[SEP]"]
+
+        token_type_ids = [0] * len(tokens)
+        input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+        attention_mask = [1] * len(input_ids)
+
+        padding_length = args.max_seq_length - len(input_ids)
+        input_ids += [tokenizer.pad_token_id] * padding_length
+
+        attention_mask += [0] * padding_length
+        token_type_ids += [0] * padding_length  # 질문 문제가 아니라서..
+
+        assert len(input_ids) == args.max_seq_length
+        assert len(attention_mask) == args.max_seq_length
+        assert len(token_type_ids) == args.max_seq_length
+
+        all_input_ids.append(input_ids)
+        all_token_type_ids.append(token_type_ids)
+        all_attention_mask.append(attention_mask)
+
+        if args.debug == True and idx == 100:
+            break
+
+    tokenized_sentences = {
+        "input_ids": torch.tensor(all_input_ids),
+        "token_type_ids": torch.tensor(all_token_type_ids),
+        "attention_mask": torch.tensor(all_attention_mask),
+        "label_ids": torch.tensor(all_label_ids),
+    }
 
     return tokenized_sentences
 
 
-def load_dataset(args, is_train=True):
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-    dataset, label = load_data(args, is_train=is_train)
+#  def preprocessing_dataset(dataset, label_type):
+#      """ 원하는 형태의 dataset으로 전처리 """
+#      label = []
+#      for i in dataset[8]:
+#          if i == "blind":
+#              label.append(100)
+#          else:
+#              label.append(label_type[i])
+#
+#      out_dataset = pd.DataFrame(
+#          {"sentence": dataset[1], "entity_01": dataset[2], "entity_02": dataset[5]}
+#      )
+#
+#      return out_dataset, label
 
-    # word to token
-    to_dataset = tokenized_dataset(dataset, tokenizer)
 
-    # hmm... return (dict type)
-    re_train_dataset = RE_Dataset(to_dataset, label)
-    return re_train_dataset, tokenizer
+#  def tokenized_dataset(args, dataset, tokenizer):
+#      # dataset keywords: "words", "e1", "e2", "labels"
+#      concat_entity = []
+#
+#      for e01, e02 in zip(dataset["e1"], dataset["e2"]):
+#          temp = e01 + "[SEP]" + e02
+#          concat_entity.append(temp)
+#
+#      tokenized_sentences = tokenizer(
+#          concat_entity,
+#          dataset["words"],
+#          return_tensors="pt",
+#          padding=True,
+#          truncation=True,
+#          add_special_tokens=True,
+#          max_length=args.token_max_length,
+#      )
+#
+#      return tokenized_sentences
+
+
+#  def load_dataset(args, tokenizer, is_train=True):
+#      tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+#      dataset, label = load_data(args, is_train=is_train)
+#
+#      # word to token
+#      to_dataset = tokenized_dataset(dataset, tokenizer)
+#
+#      # hmm... return (dict type)
+#      re_train_dataset = RE_Dataset(to_dataset, label)
+#      return re_train_dataset, tokenizer
