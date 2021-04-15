@@ -228,9 +228,11 @@ def raytune(args):
             )
 
             args["debug"] = True
+            temp = args["epochs"]
             args["epochs"] = 1
             debug(args, strategy)
             torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
+            args["epochs"] = temp
             continue
 
         # Debug를 통과하면 메모리 할당 문제도 해결 됨.
@@ -253,10 +255,10 @@ def raytune(args):
         #  wandb.run.name = base_name
 
         scheduler = PopulationBasedTraining(
-            perturbation_interval=5,
+            perturbation_interval=1,
             hyperparam_mutations={
-                "learning_rate": lambda: np.random.uniform(0.0001, 1),
-                "weight_decay": lambda: np.random.uniform(0.001, 0.05),
+                "learning_rate": tune.uniform(0.0001, 1),
+                "weight_decay": tune.uniform(0.001, 0.05),
             },
         )
 
@@ -269,9 +271,9 @@ def raytune(args):
             stop={"training_iteration": args["epochs"]},
             metric="valid_loss",
             mode="min",
-            keep_checkpoints_num=5,
-            num_samples=4,
-            resources_per_trial={"cpu": 8, "gpu": 1},
+            keep_checkpoints_num=3,
+            num_samples=3,
+            resources_per_trial={"cpu": 4, "gpu": 1},
             config=args,
         )
 
