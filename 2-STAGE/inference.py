@@ -90,8 +90,8 @@ def check_last_valid_score(args, save_path):
     # INSERT MODEL, Model별 성능 기록
     insert_model_scores(args, s_cnt, valid_acc)
 
-    #  if (is_submit is True) and args.auto_sub:
-    submission_inference(args, model, tokenizer, save_path)
+    if (is_submit is True) and args.auto_sub:
+        submission_inference(args, model, tokenizer, save_path)
 
 
 def submission_inference(args, model, tokenizer, save_path):
@@ -123,7 +123,7 @@ def submission_inference(args, model, tokenizer, save_path):
     output.to_csv(save_path, index=False)
 
     #  user_key = "Bearer 5c12695179ea1f0a97aec9ce2be8da028755f095"
-    #  auto_submit(user_key, base_name, save_path)
+    auto_submit(user_key, base_name, save_path)
 
 
 if __name__ == "__main__":

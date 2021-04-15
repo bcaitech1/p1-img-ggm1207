@@ -34,12 +34,12 @@ def get_args():
         default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/submits",
     )
 
-    # server pathes
-    pa("--weight_dir", default="/opt/ml/P-Stage/2-STAGE/weights")
-    pa("--data_dir", default="/opt/ml/input/data")
-    pa("--data_kind", default="dataset_v1")
-    pa("--strategy", default="st01")
-    pa("--submit_dir", default="/opt/ml/P-Stage/2-STAGE/submits")
+    #  # server pathes
+    #  pa("--weight_dir", default="/opt/ml/P-Stage/2-STAGE/weights")
+    #  pa("--data_dir", default="/opt/ml/input/data")
+    #  pa("--data_kind", default="dataset_v1")
+    #  pa("--strategy", default="st01")
+    #  pa("--submit_dir", default="/opt/ml/P-Stage/2-STAGE/submits")
 
     # ops hypterparameter: Uses when (not training)
 
