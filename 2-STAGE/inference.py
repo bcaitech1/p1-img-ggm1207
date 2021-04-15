@@ -11,6 +11,7 @@ import pandas as pd
 from utils import get_auto_save_path
 from prepare import load_dataloader, load_test_dataloader
 from networks import load_model_and_tokenizer
+from losses import FocalLoss
 from database import (
     execute_query,
     get_scores_of_strategy,
@@ -56,6 +57,8 @@ def check_last_valid_score(args, save_path):
 
     model.load_state_dict(torch.load(save_path))
 
+    loss_fn = FocalLoss(gamma=3)
+
     model.eval()
     epoch_loss = 0.0
 
@@ -67,17 +70,17 @@ def check_last_valid_score(args, save_path):
             inputs = {
                 "input_ids": batch["input_ids"].to(args.device),
                 "attention_mask": batch["attention_mask"].to(args.device),
-                "labels": batch["label_ids"].to(args.device),
+                #  "labels": batch["label_ids"].to(args.device),
             }
 
+            labels = batch["label_ids"].to(args.device)
+
             outputs = model(**inputs)
-            loss, preds = outputs[:2]
+            loss = loss_fn(outputs, labels)
 
-            correct_len += torch.sum(
-                inputs["labels"].squeeze() == preds.argmax(-1)
-            ).item()
+            correct_len += torch.sum(labels.squeeze() == outputs.argmax(-1)).item()
 
-            total_len += preds.size(0)
+            total_len += outputs.size(0)
             epoch_loss += loss.item()
 
     valid_avg_loss = epoch_loss / len(valid_dataloader)
@@ -112,7 +115,7 @@ def submission_inference(args, model, tokenizer, save_path):
                 "token_type_ids": batch["token_type_ids"].to(args.device),
             }
 
-            logits = model(**inputs)[0]
+            logits = model(**inputs)
             logits = logits.detach().cpu().numpy()
             result = np.argmax(logits, axis=-1)
 
@@ -122,7 +125,7 @@ def submission_inference(args, model, tokenizer, save_path):
     output = pd.DataFrame(preds, columns=["pred"])
     output.to_csv(save_path, index=False)
 
-    #  user_key = "Bearer 5c12695179ea1f0a97aec9ce2be8da028755f095"
+    user_key = "Bearer 5c12695179ea1f0a97aec9ce2be8da028755f095"
     auto_submit(user_key, base_name, save_path)
 
 

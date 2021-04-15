@@ -268,7 +268,7 @@ def raytune(args):
             metric="valid_loss",
             mode="min",
             keep_checkpoints_num=5,
-            num_samples=2,
+            num_samples=8,
             resources_per_trial={"cpu": 8, "gpu": 1},
             config=args,
         )
@@ -284,8 +284,8 @@ if __name__ == "__main__":
     ray.init()
     args = get_args()
 
-    raytune(args)
-    #  try:
-    #  except Exception as e:
-    #      print(e)
-    #      hook_fail_ray()
+    try:
+        raytune(args)
+    except Exception as e:
+        print(e)
+        hook_fail_ray()
