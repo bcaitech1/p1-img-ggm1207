@@ -70,6 +70,7 @@ def check_last_valid_score(args, save_path):
             inputs = {
                 "input_ids": batch["input_ids"].to(args.device),
                 "attention_mask": batch["attention_mask"].to(args.device),
+                "token_type_ids": batch["token_type_ids"].to(args.device),
                 #  "labels": batch["label_ids"].to(args.device),
             }
 

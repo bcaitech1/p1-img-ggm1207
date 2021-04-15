@@ -49,6 +49,7 @@ def train(args, model, loss_fn, optimizer, scheduler, dataloader):
         inputs = {
             "input_ids": batch["input_ids"].to(args.device),
             "attention_mask": batch["attention_mask"].to(args.device),
+            "token_type_ids": batch["token_type_ids"].to(args.device),
             #  "labels": batch["label_ids"].to(args.device),
         }
 
@@ -79,6 +80,7 @@ def evaluate(args, model, loss_fn, dataloader):
             inputs = {
                 "input_ids": batch["input_ids"].to(args.device),
                 "attention_mask": batch["attention_mask"].to(args.device),
+                "token_type_ids": batch["token_type_ids"].to(args.device),
                 #  "labels": batch["label_ids"].to(args.device),
             }
 
