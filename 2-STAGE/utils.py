@@ -27,6 +27,9 @@ def get_auto_save_path(args):
 
 
 def update_args(args):
+    if isinstance(args, Namespace):
+        args = vars(args)
+
     """ return dict type """
     arj = strat[args["strategy"]]
     args.update(arj)
@@ -43,7 +46,7 @@ class EarlyStopping:
         self.patience = args.patience
         self.best_valid_loss = float("inf")
 
-        self.model_save_path = get_auto_save_path(args)
+        self.model_save_path = args.save_path
 
     def __call__(self, train_loss, valid_loss, valid_acc, model):
 

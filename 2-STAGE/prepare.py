@@ -45,6 +45,18 @@ def pick_one_dataset(args, is_train=True):
         return test_dataset
 
 
+def load_test_dataloader(args, tokenizer):
+    test_dataset = pick_one_dataset(args, is_train=False)
+    test_dataset = tokenized_dataset(args, test_dataset, tokenizer)
+    test_dataset = RE_Dataset(test_dataset)
+
+    test_dataloader = DataLoader(
+        test_dataset, batch_size=32, pin_memory=True, num_workers=4
+    )
+
+    return test_dataloader
+
+
 def load_dataloader(args, tokenizer):
     train_dataset, valid_dataset = pick_one_dataset(args, is_train=True)
 
@@ -173,3 +185,15 @@ def tokenized_dataset(args, dataset, tokenizer):
 #      # hmm... return (dict type)
 #      re_train_dataset = RE_Dataset(to_dataset, label)
 #      return re_train_dataset, tokenizer
+
+if __name__ == "__main__":
+    from config import get_args
+
+    args = get_args()
+    dataset, valid_dataset = pick_one_dataset(args, is_train=True)
+
+    for idx, (e01, e02, words, label) in enumerate(
+        zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
+    ):
+        print(e01, e02, words, label)
+        break

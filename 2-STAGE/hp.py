@@ -55,8 +55,8 @@ strat = dict()
 strat["st01"] = {
     "strategy": "st01",
     "data_kind": "dataset_v1",
-    "ms_name": "bertling",
-    "model_name_or_path": "bert-base-multilingual-cased",
+    "ms_name": "koelectra",
+    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "batch_size": tune.choice([16, 32]),
     "max_seq_length": 256,
     "weight_decay": tune.uniform(0.001, 0.02),

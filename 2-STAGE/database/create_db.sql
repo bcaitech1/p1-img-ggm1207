@@ -19,3 +19,5 @@ CREATE TABLE MODEL(
     dataset CHAR(10) DEFAULT "dataset_v1",
     dataset_idx CHAR(1) DEFAULT "0"
 );
+
+INSERT INTO STRATEGY(strategy) VALUES('st01');

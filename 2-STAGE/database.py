@@ -18,6 +18,47 @@ def execute_query(query):
     conn.close()
 
 
+def get_scores_of_strategy(strategy):
+    """ 전략이 들어갔다면 무조건 Default 값이라도 뽑아낸다. """
+    conn = db_connect()
+    query = f"SELECT cnt, v_max_score, v_avg_score FROM STRATEGY WHERE strategy='{strategy}'"
+
+    cur = conn.cursor()
+    cur.execute(query)
+
+    rows = cur.fetchone()  # fetchone, fetchmany
+    conn.close()
+
+    return rows
+
+
+def insert_model_scores(args, s_cnt, acc):
+    query = f"INSERT INTO MODEL(strategy, ms_name, s_cnt, v_score, dataset, dataset_idx) \
+VALUES('{args.strategy}', '{args.ms_name}', {int(s_cnt)}, {acc}, '{args.data_kind}', '{args.dataset_idx}')"
+    execute_query(query)
+
+
+def update_strategy_statistics(args, valid_acc):
+    """ 평균 계산하고, MAX_SCORE 계산 """
+    flag = False
+    prev_cnt, prev_max_score, prev_avg_score = get_scores_of_strategy(args.strategy)
+
+    new_avg_score = prev_avg_score * prev_cnt + valid_acc
+    new_avg_score /= prev_cnt + 1
+
+    if valid_acc > prev_max_score:
+        flag = True
+        prev_max_score = valid_acc
+
+    query = f"UPDATE STRATEGY SET v_max_score={prev_max_score}, v_avg_score={new_avg_score} WHERE strategy='{args.strategy}'"
+    execute_query(query)
+
+    query = f"UPDATE STRATEGY SET cnt = {prev_cnt+1} WHERE strategy = '{args.strategy}'"
+    execute_query(query)
+
+    return flag
+
+
 def sample_strategy():
     """ PENDING되지 않은 전략 중, """
     conn = db_connect()
