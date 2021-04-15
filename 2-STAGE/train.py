@@ -91,7 +91,7 @@ def evaluate(args, model, dataloader):
 
 
 def run(args, model, optimizer, scheduler, train_dataloader, test_dataloader):
-    es_helper = EarlyStopping(args, verbose=True)  # logging, save
+    #  es_helper = EarlyStopping(args, verbose=True)  # logging, save
 
     for epoch in range(int(args.epochs)):
         start_time = time.time()
@@ -251,7 +251,7 @@ def raytune(args):
             metric="valid_loss",
             mode="min",
             keep_checkpoints_num=5,
-            num_samples=2,
+            num_samples=8,
             resources_per_trial={"cpu": 8, "gpu": 1},
             config=args,
         )
