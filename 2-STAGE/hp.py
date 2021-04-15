@@ -58,7 +58,7 @@ strat["st01"] = {
     "ms_name": "koelectra",
     #  "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "model_name_or_path": "bert-base-multilingual-cased",
-    "batch_size": tune.choice([64, 128]),
+    "batch_size": tune.choice([64]),
     "max_seq_length": 256,
     "weight_decay": tune.uniform(0.001, 0.02),
     "learning_rate": tune.uniform(3e-4, 3e-3),
