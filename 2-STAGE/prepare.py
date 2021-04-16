@@ -119,6 +119,7 @@ def tokenized_dataset(args, dataset, tokenizer):
     ):
         tokens = ["[CLS]", e01, e02] + words
         all_label_ids.append(label)
+        tokens = tokenizer.tokenize(" ".join(tokens))
 
         if len(tokens) > args.max_seq_length - special_tokens_count:
             tokens = tokens[: (args.max_seq_length - special_tokens_count)]
