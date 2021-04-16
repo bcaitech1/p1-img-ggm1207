@@ -119,7 +119,7 @@ def tokenized_dataset(args, dataset, tokenizer):
     ):
         # Using Tokenizer Encode, 저절로 [CLS] , [SEP] 는 붙음
 
-        tokens = [e01, "[SEP]", e02, "[SEP]"] + words
+        tokens = [e01, e02] + words
         all_label_ids.append(label)
 
         tokens = tokenizer.encode(" ".join(tokens))
