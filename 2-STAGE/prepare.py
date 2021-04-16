@@ -65,9 +65,9 @@ def load_sample(args, tokenizer):
     batch = re_tv_dataset[idx]
 
     inputs = {
-        "input_ids": batch["input_ids"].to(args.device),
-        "attention_mask": batch["attention_mask"].to(args.device),
-        "token_type_ids": batch["token_type_ids"].to(args.device),
+        "input_ids": batch["input_ids"].to(args.device).unsqueeze(0),
+        "attention_mask": batch["attention_mask"].to(args.device).unsqueeze(0),
+        "token_type_ids": batch["token_type_ids"].to(args.device).unsqueeze(0),
     }
 
     labels = batch["labels"].to(args.device)
