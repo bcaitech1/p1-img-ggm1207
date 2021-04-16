@@ -7,15 +7,17 @@ from torch.utils.data import Dataset, DataLoader
 
 
 class RE_Dataset(Dataset):
-    def __init__(self, tokenized_dataset):
+    def __init__(self, tokenized_dataset, labels):
         self.tokenized_dataset = tokenized_dataset
+        self.labels = labels
 
     def __getitem__(self, idx):
         item = {key: val[idx] for key, val in self.tokenized_dataset.items()}
+        item["labels"] = torch.tensor(self.labels[idx])
         return item
 
     def __len__(self):
-        return len(self.tokenized_dataset["labels"])
+        return len(self.labels)
 
 
 def pick_one_dataset(args, is_train=True):
@@ -81,8 +83,8 @@ def load_dataloader(args, tokenizer):
     tt_dataset = tokenized_dataset(args, train_dataset, tokenizer)
     tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
 
-    re_tt_dataset = RE_Dataset(tt_dataset)
-    re_tv_dataset = RE_Dataset(tv_dataset)
+    re_tt_dataset = RE_Dataset(tt_dataset, train_dataset["labels"])
+    re_tv_dataset = RE_Dataset(tv_dataset, valid_dataset["labels"])
 
     train_dataloader = DataLoader(
         re_tt_dataset,
@@ -93,7 +95,7 @@ def load_dataloader(args, tokenizer):
         drop_last=True,
     )
 
-    test_dataloader = DataLoader(
+    valid_dataloader = DataLoader(
         re_tv_dataset,
         batch_size=args.batch_size,
         shuffle=False,
@@ -101,66 +103,81 @@ def load_dataloader(args, tokenizer):
         num_workers=1,
     )
 
-    return train_dataloader, test_dataloader
+    return train_dataloader, valid_dataloader
 
 
 def tokenized_dataset(args, dataset, tokenizer):
     # dataset keywords: "words", "e1", "e2", "labels"
 
-    all_input_ids = []
-    all_token_type_ids = []
-    all_attention_mask = []
-    all_label_ids = []
+    #  all_input_ids = []
+    #  all_token_type_ids = []
+    #  all_attention_mask = []
+    #  all_label_ids = []
 
-    special_tokens_count = 1  # 사실 4개임
+    #  special_tokens_count = 1  # 사실 4개임
 
-    for idx, (e01, e02, words, label) in enumerate(
-        zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
-    ):
-        # Using Tokenizer Encode, 저절로 [CLS] , [SEP] 는 붙음
+    concat_entity = []
 
-        tokens = [e01, e02] + words
-        all_label_ids.append(label)
+    for idx, (e01, e02) in enumerate(zip(dataset["e1"], dataset["e2"])):
+        concat_entity.append(e01 + "[SEP]" + e02)
 
-        tokens = tokenizer.encode(" ".join(tokens))
+    tokenized_sentences = tokenizer(
+        concat_entity,
+        list(dataset["words"]),
+        return_tensors="pt",
+        padding=True,
+        truncation=True,
+        max_length=129,
+        add_special_tokens=True,
+    )
 
-        if len(tokens) > args.max_seq_length - special_tokens_count:
-            tokens = tokens[: (args.max_seq_length - special_tokens_count)]
+    #  for idx, (e01, e02, words, label) in enumerate(
+    #      zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
+    #  ):
+    #      # Using Tokenizer Encode, 저절로 [CLS] , [SEP] 는 붙음
+    #
+    #      tokens = [e01, e02] + words
+    #      all_label_ids.append(label)
+    #
+    #      tokens = tokenizer.encode(" ".join(tokens))
+    #
+    #      if len(tokens) > args.max_seq_length - special_tokens_count:
+    #          tokens = tokens[: (args.max_seq_length - special_tokens_count)]
+    #
+    #          tokens.append(
+    #              tokenizer.convert_tokens_to_ids(
+    #                  tokenizer.special_tokens_map["unk_token"]
+    #              )
+    #          )
+    #
+    #      token_type_ids = [0] * len(tokens)
+    #
+    #      input_ids = tokens
+    #      attention_mask = [1] * len(input_ids)
+    #
+    #      padding_length = args.max_seq_length - len(input_ids)
+    #      input_ids += [tokenizer.pad_token_id] * padding_length
+    #
+    #      attention_mask += [0] * padding_length
+    #      token_type_ids += [0] * padding_length  # 질문 문제가 아니라서..
+    #
+    #      assert len(input_ids) == args.max_seq_length
+    #      assert len(attention_mask) == args.max_seq_length
+    #      assert len(token_type_ids) == args.max_seq_length
+    #
+    #      all_input_ids.append(input_ids)
+    #      all_token_type_ids.append(token_type_ids)
+    #      all_attention_mask.append(attention_mask)
+    #
+    #      if args.debug is True and idx == 100:
+    #          break
 
-            tokens.append(
-                tokenizer.convert_tokens_to_ids(
-                    tokenizer.special_tokens_map["unk_token"]
-                )
-            )
-
-        token_type_ids = [0] * len(tokens)
-
-        input_ids = tokens
-        attention_mask = [1] * len(input_ids)
-
-        padding_length = args.max_seq_length - len(input_ids)
-        input_ids += [tokenizer.pad_token_id] * padding_length
-
-        attention_mask += [0] * padding_length
-        token_type_ids += [0] * padding_length  # 질문 문제가 아니라서..
-
-        assert len(input_ids) == args.max_seq_length
-        assert len(attention_mask) == args.max_seq_length
-        assert len(token_type_ids) == args.max_seq_length
-
-        all_input_ids.append(input_ids)
-        all_token_type_ids.append(token_type_ids)
-        all_attention_mask.append(attention_mask)
-
-        if args.debug is True and idx == 100:
-            break
-
-    tokenized_sentences = {
-        "input_ids": torch.tensor(all_input_ids),
-        "token_type_ids": torch.tensor(all_token_type_ids),
-        "attention_mask": torch.tensor(all_attention_mask),
-        "labels": torch.tensor(all_label_ids),
-    }
+    #  tokenized_sentences = {
+    #      "input_ids": torch.tensor(all_input_ids),
+    #      "token_type_ids": torch.tensor(all_token_type_ids),
+    #      "attention_mask": torch.tensor(all_attention_mask),
+    #      "labels": torch.tensor(all_label_ids),
+    #  }
 
     return tokenized_sentences
 
