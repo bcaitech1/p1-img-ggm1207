@@ -52,12 +52,12 @@ def get_args():
 
     # train hypterparameters: Uses when training
 
-    pa("--ms_name", default="kobert")
+    pa("--ms_name", default="bert")
     pa("--model_name_or_path", default="bert-base-multilingual-cased")
 
     pa("--optimizer", default="adamw")
     pa("--sampler", default="random")
-    pa("--epochs", default=50, type=int)
+    pa("--epochs", default=20, type=int)
     pa("--scheduler", default="step_lr")
     pa("--batch_size", default=32, type=int)
     pa("--warmup_steps", default=500, type=int)

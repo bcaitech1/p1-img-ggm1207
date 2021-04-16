@@ -38,7 +38,7 @@ def train(args, model, loss_fn, optimizer, scheduler, dataloader):
         labels = batch["labels"].to(args.device)
 
         preds = model(**inputs)
-        preds = preds[0]
+        preds = preds[0]  # preds.logits
 
         loss = loss_fn(preds, labels)
 
@@ -90,6 +90,7 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
 
     if "preds" in return_keys:
         results["preds"] = all_preds
+
     print(all_preds)
     return results
 

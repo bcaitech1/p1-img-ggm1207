@@ -127,7 +127,7 @@ def tokenized_dataset(args, dataset, tokenizer):
         return_tensors="pt",
         padding=True,
         truncation=True,
-        max_length=129,
+        max_length=256,
         add_special_tokens=True,
     )
 
@@ -240,3 +240,4 @@ if __name__ == "__main__":
         zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
     ):
         print(e01, e02, words, label)
+        break

@@ -16,7 +16,7 @@ class BertClassifier(nn.Module):
         self.backbone = AutoModel.from_pretrained(
             args.model_name_or_path, config=config
         )
-        self.do = nn.Dropout(p=0.3)
+        self.do = nn.Dropout(p=0.1)
         self.fc = nn.Linear(self.backbone.config.hidden_size, args.num_labels)
 
     def forward(self, **inputs):
@@ -35,9 +35,11 @@ class BertClassifier(nn.Module):
 def load_model_and_tokenizer(args):
     config = AutoConfig.from_pretrained(args.model_name_or_path)
     config.num_labels = 42
+
     model = AutoModelForSequenceClassification.from_pretrained(
         args.model_name_or_path, config=config
     )
+
     model.parameters
     model.to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
