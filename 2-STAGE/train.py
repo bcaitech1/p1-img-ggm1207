@@ -38,6 +38,8 @@ def train(args, model, loss_fn, optimizer, scheduler, dataloader):
         labels = batch["labels"].to(args.device)
 
         preds = model(**inputs)
+        preds = preds[0]
+
         loss = loss_fn(preds, labels)
 
         loss.backward()
@@ -70,6 +72,7 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
             labels = batch["labels"].to(args.device)
 
             preds = model(**inputs)
+            preds = preds[0]
 
             if "loss" in return_keys:
                 loss = loss_fn(preds, labels)

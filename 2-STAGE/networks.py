@@ -1,8 +1,11 @@
 #  from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
 import torch.nn as nn
-from transformers import AutoConfig, AutoModel, AutoTokenizer
-
-#  from transformers import BertForSequenceClassification
+from transformers import (
+    AutoConfig,
+    AutoModel,
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+)
 
 
 class BertClassifier(nn.Module):
@@ -23,7 +26,19 @@ class BertClassifier(nn.Module):
         return x
 
 
+#  def load_model_and_tokenizer(args):
+#      model = BertClassifier(args).to(args.device)
+#      tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+#      return model, tokenizer
+
+
 def load_model_and_tokenizer(args):
-    model = BertClassifier(args).to(args.device)
+    config = AutoConfig.from_pretrained(args.model_name_or_path)
+    config.num_labels = 42
+    model = AutoModelForSequenceClassification.from_pretrained(
+        args.model_name_or_path, config=config
+    )
+    model.parameters
+    model.to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
     return model, tokenizer
