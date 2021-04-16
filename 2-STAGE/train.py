@@ -128,7 +128,7 @@ def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_datal
                 valid_loss=results["loss"],
                 valid_acc=results["acc"],
                 train_loss=train_loss,
-                learning_rate=scheduler.get_lr(),
+                learning_rate=scheduler.get_lr()[0],
             )
         )
 
@@ -179,4 +179,6 @@ if __name__ == "__main__":
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)
 
-    run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
+    print(scheduler.get_lr())
+
+    #  run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
