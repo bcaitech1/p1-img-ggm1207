@@ -1,35 +1,15 @@
-import os
 import time
-import math
-import pickle
-import random
-import pandas as pd
 from argparse import Namespace
 
-import ray
 import torch
-import wandb
-import numpy as np
-from ray import tune
-from ray.tune.schedulers import PopulationBasedTraining
-from ray.tune.integration.wandb import wandb_mixin
-
-from transformers import (
-    Trainer,
-    BertConfig,
-    TrainingArguments,
-    BertForSequenceClassification,
-)
+from sklearn.metrics import accuracy_score
 
 from config import get_args
-from prepare import load_dataloader
+from prepare import load_sample
+from database import execute_query
+from slack import hook_fail_strategy
 from networks import load_model_and_tokenizer
-from optimizers import get_optimizer, get_scheduler
-from database import sample_strategy, execute_query
-from utils import custom_model_save, get_auto_save_path, update_args, EarlyStopping
-from hook_slack import hook_fail_strategy, hook_fail_ray, hook_simple_text
-from inference import check_last_valid_score
-from losses import FocalLoss
+from utils import EarlyStopping, get_auto_save_path
 
 
 def epoch_time(start_time, end_time):
@@ -40,6 +20,9 @@ def epoch_time(start_time, end_time):
 
 
 def train(args, model, loss_fn, optimizer, scheduler, dataloader):
+    if isinstance(args, dict):
+        args = Namespace(**args)
+
     model.train()
     epoch_loss = 0.0
 
@@ -50,15 +33,12 @@ def train(args, model, loss_fn, optimizer, scheduler, dataloader):
             "input_ids": batch["input_ids"].to(args.device),
             "attention_mask": batch["attention_mask"].to(args.device),
             "token_type_ids": batch["token_type_ids"].to(args.device),
-            #  "labels": batch["label_ids"].to(args.device),
         }
 
-        labels = batch["label_ids"].to(args.device)
+        labels = batch["labels"].to(args.device)
 
-        outputs = model(**inputs)
-        loss = loss_fn(outputs, labels)
-
-        #  loss = outputs[0]
+        preds = model(**inputs)
+        loss = loss_fn(preds, labels)
 
         loss.backward()
         optimizer.step()
@@ -68,12 +48,16 @@ def train(args, model, loss_fn, optimizer, scheduler, dataloader):
     return epoch_loss / len(dataloader)
 
 
-def evaluate(args, model, loss_fn, dataloader):
+def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
+    """ evaluate model and return dict of return_keys's results  """
+    if isinstance(args, dict):
+        args = Namespace(**args)
+
     model.eval()
     epoch_loss = 0.0
 
-    total_len = 0
-    correct_len = 0
+    results = dict()
+    all_labels, all_preds = [], []
 
     with torch.no_grad():
         for i, batch in enumerate(dataloader):
@@ -81,215 +65,96 @@ def evaluate(args, model, loss_fn, dataloader):
                 "input_ids": batch["input_ids"].to(args.device),
                 "attention_mask": batch["attention_mask"].to(args.device),
                 "token_type_ids": batch["token_type_ids"].to(args.device),
-                #  "labels": batch["label_ids"].to(args.device),
             }
 
-            labels = batch["label_ids"].to(args.device)
+            labels = batch["labels"].to(args.device)
 
-            outputs = model(**inputs)
-            loss = loss_fn(outputs, labels)
+            preds = model(**inputs)
 
-            correct_len += torch.sum(labels.squeeze() == outputs.argmax(-1)).item()
+            if "loss" in return_keys:
+                loss = loss_fn(preds, labels)
+                epoch_loss += loss.item()
 
-            total_len += outputs.size(0)
-            epoch_loss += loss.item()
+            all_labels.extend(labels.detach().cpu().tolist())
+            all_preds.extend(preds.argmax(-1).detach().cpu().tolist())
 
-    return epoch_loss / len(dataloader), correct_len / total_len
+    if "loss" in return_keys:
+        results["loss"] = epoch_loss / len(dataloader)
+
+    if "acc" in return_keys:
+        results["acc"] = accuracy_score(all_labels, all_preds)
+
+    if "preds" in return_keys:
+        results["preds"] = all_preds
+
+    return results
 
 
 def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader):
-    #  es_helper = EarlyStopping(args, verbose=True)  # logging, save
+    """ train, evaluate for range(epochs), no hyperparameter search """
+    args.save_path, _ = get_auto_save_path(args)
+    early_stop = EarlyStopping(args, verbose=True)
+
+    if isinstance(args, dict):
+        args = Namespace(**args)
 
     for epoch in range(int(args.epochs)):
         start_time = time.time()
 
         train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
-        valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
+        results = evaluate(
+            args, model, loss_fn, test_dataloader, return_keys=["loss", "acc"]
+        )
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
 
         print(f"Epoch: {epoch + 1:02} | Time: {epoch_mins}m {epoch_secs}s")
-        #  es_helper(train_loss, valid_loss, valid_acc, model)
-        #
-        #  if es_helper.early_stop:
-        #      break
+        early_stop(train_loss, results["loss"], results["acc"], model)
 
+        if early_stop.early_stop is True:
+            break
 
-# batch_size, learning rate, momentum, beta1, beta2, weight decay,
-# learning rate scheduler
-# optimizer
-# accumulation steps -> batch_size랑 관련 있는 거였어..
-
-
-@wandb_mixin
-def main(config, checkpoint_dir=None):
-    step = 0
-    args = Namespace(**config)
-
-    model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
-    train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
-    loss_fn = FocalLoss(gamma=3)
-
-    optimizer = get_optimizer(args, model)
-    scheduler = get_scheduler(args, optimizer)  # 안 쓰긴 하는데
-
-    #  run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
-
-    if checkpoint_dir is not None:  # Use For PBT
-        print("I'm in checkpoint_dir!!")
-        path = os.path.join(checkpoint_dir, "checkpoint")
-        checkpoint = torch.load(path)
-
-        model.load_state_dict(checkpoint["model"])
-        optimizer.load_state_dict(checkpoint["optim"])
-        step = checkpoint["step"]
-
-    es_helper = EarlyStopping(args, verbose=True)  # Use For Ensemble
-
-    while True:
-        start_time = time.time()
-
-        train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
-        valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
-
-        es_helper(train_loss, valid_loss, valid_acc, model)
-
-        # wandb.log는 tune.report, tune.checkpoint_dir 보다 선행 되어야 한다.
-        wandb.log(
-            dict(valid_loss=valid_loss, valid_acc=valid_acc, train_loss=train_loss)
-        )
-
-        # 뭔지 모르겠지만 여기서 걍 끝남.
-        tune.report(valid_loss=valid_loss, valid_acc=valid_acc, train_loss=train_loss)
-
-        end_time = time.time()
-        epoch_mins, epoch_secs = epoch_time(start_time, end_time)
-
-        with tune.checkpoint_dir(step=step) as checkpoint_dir:
-            path = os.path.join(checkpoint_dir, "checkpoint")
-            torch.save(
-                {
-                    "model": model.state_dict(),
-                    "optim": optimizer.state_dict(),
-                    "step": step,
-                },
-                path,
-            )
+        print()
 
 
 def debug(args, strategy):
-    args = Namespace(**args)
+    """ just testing, is it works? """
+
+    if isinstance(args, dict):
+        args = Namespace(**args)
+
+    args.batch_size = 32
 
     try:
-        model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
-        train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
+        model, tokenizer = load_model_and_tokenizer(args)
+        loss_fn = get_lossfn(args)
 
-        optimizer = get_optimizer(args, model)
-        scheduler = get_scheduler(args, optimizer)
-
-        loss_fn = FocalLoss(gamma=3)
-
-        run(
-            args,
-            model,
-            loss_fn,
-            optimizer,
-            scheduler,
-            train_dataloader,
-            test_dataloader,
-        )
+        inputs, labels = load_sample(args, tokenizer)
+        preds = model(**inputs)
+        _ = loss_fn(preds, labels)
 
         query = f"UPDATE STRATEGY SET STATUS = 'RUN' WHERE strategy='{strategy}'"
         execute_query(query)
 
     except Exception as e:
+        print(e.with_traceback())
         query = f"UPDATE STRATEGY SET STATUS = 'PENDING' WHERE strategy='{strategy}'"
         execute_query(query)
-        hook_fail_strategy(strategy, e)
-
-
-def raytune(args):
-    """ 하이퍼파라미터 설정하는 곳 """
-    args = vars(args)  # update_args(args)
-
-    while True:
-        # status가 ready면 우선 Debug로 잘 돌아가는지 실험해보자.
-        strategy, status, cnt, v_avg_score = sample_strategy()
-
-        if status == "READY":
-            origin_args = vars(get_args())
-            args.update(
-                {
-                    k: v
-                    for k, v in origin_args.items()
-                    if k in {"learning_rate", "batch_size", "weight_decay"}
-                }
-            )
-
-            args["debug"] = True
-            temp = args["epochs"]
-            args["epochs"] = 1
-            debug(args, strategy)
-            torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
-            args["epochs"] = temp
-            continue
-
-        # Debug를 통과하면 메모리 할당 문제도 해결 됨.
-
-        args["strategy"] = strategy
-        args = update_args(args)
-        args["dataset_idx"] = random.randint(0, 4)  # 0 ~ 4
-
-        save_path = get_auto_save_path(Namespace(**args))
-        base_name = os.path.basename(save_path)[:-4]
-
-        args["wandb"] = {
-            "project": "p-stage-2",
-            "api_key": "b9adc17bf9dff02b1aa29666268b7ab9ccaf2e56",
-            "name": base_name,
-        }
-
-        args["save_path"] = save_path
-
-        #  wandb.run.name = base_name
-
-        scheduler = PopulationBasedTraining(
-            perturbation_interval=1,
-            hyperparam_mutations={
-                "learning_rate": tune.uniform(0.0001, 1),
-                "weight_decay": tune.uniform(0.001, 0.05),
-            },
-        )
-
-        hook_simple_text(f":pray: {base_name} PBT 시작합니다!!")
-
-        tune.run(
-            main,
-            name="pbt_bert_test",
-            scheduler=scheduler,
-            stop={"training_iteration": args["epochs"]},
-            metric="valid_loss",
-            mode="min",
-            keep_checkpoints_num=3,
-            num_samples=3,
-            resources_per_trial={"cpu": 4, "gpu": 1},
-            config=args,
-        )
-
-        torch.cuda.empty_cache()
-
-        hook_simple_text(f":joy: {base_name} 학습 끝!!!")
-
-        check_last_valid_score(args, save_path)
+        hook_fail_strategy(strategy, e.with_traceback())
 
 
 if __name__ == "__main__":
-    ray.init()
+    from losses import get_lossfn
+    from prepare import load_dataloader
+    from optimizers import get_optimizer, get_scheduler
+
     args = get_args()
 
-    try:
-        raytune(args)
-    except Exception as e:
-        print(e)
-        hook_fail_ray()
+    model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
+    train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
+    loss_fn = get_lossfn(args)
+    optimizer = get_optimizer(args, model)
+    #  scheduler = get_scheduler(args, optimizer)
+
+    run(args, model, loss_fn, optimizer, None, train_dataloader, test_dataloader)

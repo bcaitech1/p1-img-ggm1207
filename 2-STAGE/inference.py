@@ -2,22 +2,16 @@ import os
 import re
 import json
 import requests
-from argparse import Namespace
 
 import torch
 import numpy as np
 import pandas as pd
 
-from utils import get_auto_save_path
-from prepare import load_dataloader, load_test_dataloader
+from train import evaluate
+from losses import get_lossfn
 from networks import load_model_and_tokenizer
-from losses import FocalLoss
-from database import (
-    execute_query,
-    get_scores_of_strategy,
-    update_strategy_statistics,
-    insert_model_scores,
-)
+from prepare import load_dataloader, load_test_dataloader
+from database import update_strategy_statistics, insert_model_scores
 
 
 def auto_submit(user_key, description, file_path):
@@ -46,83 +40,39 @@ def auto_submit(user_key, description, file_path):
     requests.post(url=submit_url, data=body, files={"file": open(file_path, "rb")})
 
 
-def check_last_valid_score(args, save_path):
-    if isinstance(args, dict):
-        args = Namespace(**args)
-
-    args.batch_size = 32
+def if_best_score_auto_submit(args, save_path):
+    """ 경로만 있으면 된다. """
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     _, valid_dataloader = load_dataloader(args, tokenizer)
-
     model.load_state_dict(torch.load(save_path))
+    loss_fn = get_lossfn(args)
 
-    loss_fn = FocalLoss(gamma=3)
+    results = evaluate(args, model, loss_fn, valid_dataloader, return_keys=["acc"])
 
-    model.eval()
-    epoch_loss = 0.0
+    s_cnt = re.findall(r"[\d]{3}", save_path)[-1]
 
-    total_len = 0
-    correct_len = 0
-
-    with torch.no_grad():
-        for i, batch in enumerate(valid_dataloader):
-            inputs = {
-                "input_ids": batch["input_ids"].to(args.device),
-                "attention_mask": batch["attention_mask"].to(args.device),
-                "token_type_ids": batch["token_type_ids"].to(args.device),
-                #  "labels": batch["label_ids"].to(args.device),
-            }
-
-            labels = batch["label_ids"].to(args.device)
-
-            outputs = model(**inputs)
-            loss = loss_fn(outputs, labels)
-
-            correct_len += torch.sum(labels.squeeze() == outputs.argmax(-1)).item()
-
-            total_len += outputs.size(0)
-            epoch_loss += loss.item()
-
-    valid_avg_loss = epoch_loss / len(valid_dataloader)
-    valid_acc = correct_len / total_len
-
-    s_cnt = re.findall("[\d]{3}", save_path)[-1]
-
-    # UPDATE Strategy
-    is_submit = update_strategy_statistics(args, valid_acc)
-    # INSERT MODEL, Model별 성능 기록
-    insert_model_scores(args, s_cnt, valid_acc)
+    is_submit = update_strategy_statistics(args, results["acc"])
+    insert_model_scores(args, s_cnt, results["acc"])
 
     if (is_submit is True) and args.auto_sub:
         submission_inference(args, model, tokenizer, save_path)
 
 
 def submission_inference(args, model, tokenizer, save_path):
-    """ save_path: .../st01_kobert_002.pth"""
-    model.eval()
+    """ save_path: .../st01_kobert_002.pth for parsing """
+    model.to(args.device)
+    torch.cuda.empty_cache()
+
+    loss_fn = get_lossfn(args)
+    test_dataloader = load_test_dataloader(args, tokenizer)
 
     base_name = os.path.basename(save_path)[:-4]
     save_path = os.path.join(args.submit_dir, base_name) + ".csv"
 
-    test_dataloader = load_test_dataloader(args, tokenizer)
-    output_pred = []
+    results = evaluate(args, model, loss_fn, test_dataloader, return_keys=["preds"])
 
-    with torch.no_grad():
-        for i, batch in enumerate(test_dataloader):
-            inputs = {
-                "input_ids": batch["input_ids"].to(args.device),
-                "attention_mask": batch["attention_mask"].to(args.device),
-                "token_type_ids": batch["token_type_ids"].to(args.device),
-            }
-
-            logits = model(**inputs)
-            logits = logits.detach().cpu().numpy()
-            result = np.argmax(logits, axis=-1)
-
-            output_pred.extend(result)
-
-    preds = np.array(output_pred).reshape(-1)
+    preds = np.array(results["preds"]).reshape(-1)
     output = pd.DataFrame(preds, columns=["pred"])
     output.to_csv(save_path, index=False)
 
@@ -134,9 +84,9 @@ if __name__ == "__main__":
     from config import get_args
 
     args = get_args()
-    check_last_valid_score(
+    if_best_score_auto_submit(
         args,
-        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st01_kobert_002.pth",
+        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st01_kobert_000.pth",
     )
 
     #  auto_submit(user_key, "description_test", "./submission.csv")

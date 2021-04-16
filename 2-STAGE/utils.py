@@ -1,13 +1,12 @@
 import os
 import glob
-import json
+import random
 import os.path as p
 from argparse import Namespace
 
 import torch
-import numpy as np
 
-from hp import strat
+from hp_space import strat
 
 
 def custom_model_save(model, save_path):
@@ -15,24 +14,41 @@ def custom_model_save(model, save_path):
 
 
 def get_auto_save_path(args):
+    if isinstance(args, dict):
+        args = Namespace(**args)
+
     prefix = "_".join([args.strategy, args.ms_name])
     prefix = p.join(args.weight_dir, prefix)
 
     s_cnt = len(glob.glob(prefix + "*"))
     save_path = f"{prefix}_{s_cnt:03}.pth"
+    base_name = os.path.basename(save_path)[:-4]
 
     assert not p.exists(save_path), f"{save_path} already exists"
 
-    return save_path
+    return save_path, base_name
 
 
-def update_args(args):
+def update_args(args, strategy):
+    """ this function use for hp search, Parallelism should be considered """
+
     if isinstance(args, Namespace):
         args = vars(args)
 
-    """ return dict type """
-    arj = strat[args["strategy"]]
-    args.update(arj)
+    args.update(strat[strategy])
+    args["dataset_idx"] = random.randint(0, 4)  # 0 ~ 4
+
+    save_path, base_name = get_auto_save_path(args)
+
+    args["wandb"] = {
+        "project": "p-stage-2",
+        "api_key": "b9adc17bf9dff02b1aa29666268b7ab9ccaf2e56",
+        "name": base_name,
+    }
+
+    args["save_path"] = save_path
+    args["base_name"] = base_name
+
     return args
 
 

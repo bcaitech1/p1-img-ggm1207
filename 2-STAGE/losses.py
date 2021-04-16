@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
+def get_lossfn(args):
+    return FocalLoss(gamma=3)
+
+
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, classes=42, smoothing=0.1, dim=-1):
         super(LabelSmoothingLoss, self).__init__()

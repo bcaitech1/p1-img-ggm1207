@@ -1,6 +1,4 @@
-import random
 import argparse
-import os.path as p
 from functools import partial
 
 import torch
@@ -45,7 +43,7 @@ def get_args():
 
     pa("--dataset_idx", default=0)
     pa("--num_labels", default=42, type=int)
-    pa("--auto_sub", default=False, type=int)
+    pa("--auto_sub", default=False, type=str2bool)
     pa("--debug", default=False, type=str2bool)
 
     # early stopping

@@ -2,8 +2,7 @@
 import torch
 import torch.nn as nn
 from transformers import AutoConfig, AutoModel, AutoTokenizer
-
-#  from transformers import Electra
+from transformers import BertForSequenceClassification
 
 
 class BertClassifier(nn.Module):

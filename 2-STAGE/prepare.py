@@ -1,10 +1,8 @@
-import os
 import pickle
 import random
 import os.path as p
 
 import torch
-import pandas as pd
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -17,7 +15,7 @@ class RE_Dataset(Dataset):
         return item
 
     def __len__(self):
-        return len(self.tokenized_dataset["label_ids"])
+        return len(self.tokenized_dataset["labels"])
 
 
 def pick_one_dataset(args, is_train=True):
@@ -37,7 +35,7 @@ def pick_one_dataset(args, is_train=True):
 
         return train_dataset, valid_dataset
     else:
-        test_path = p.join(data_path, f"test.pkl")
+        test_path = p.join(data_path, "test.pkl")
 
         with open(test_path, "rb") as f:
             test_dataset = pickle.load(f)
@@ -51,10 +49,30 @@ def load_test_dataloader(args, tokenizer):
     test_dataset = RE_Dataset(test_dataset)
 
     test_dataloader = DataLoader(
-        test_dataset, batch_size=32, pin_memory=True, num_workers=4
+        test_dataset, batch_size=32, pin_memory=True, num_workers=1, shuffle=False
     )
 
     return test_dataloader
+
+
+def load_sample(args, tokenizer):
+    _, valid_dataset = pick_one_dataset(args, is_train=True)
+
+    tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
+    re_tv_dataset = RE_Dataset(tv_dataset)
+
+    idx = random.randint(0, len(re_tv_dataset))
+    batch = re_tv_dataset[idx]
+
+    inputs = {
+        "input_ids": batch["input_ids"].to(args.device),
+        "attention_mask": batch["attention_mask"].to(args.device),
+        "token_type_ids": batch["token_type_ids"].to(args.device),
+    }
+
+    labels = batch["labels"].to(args.device)
+
+    return inputs, labels
 
 
 def load_dataloader(args, tokenizer):
@@ -70,8 +88,9 @@ def load_dataloader(args, tokenizer):
         re_tt_dataset,
         batch_size=args.batch_size,
         shuffle=True,
-        pin_memory=True,
-        num_workers=4,
+        pin_memory=True,  # Load Faster, If Use GPU
+        num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
+        drop_last=True,
     )
 
     test_dataloader = DataLoader(
@@ -79,7 +98,7 @@ def load_dataloader(args, tokenizer):
         batch_size=args.batch_size,
         shuffle=False,
         pin_memory=True,
-        num_workers=4,
+        num_workers=1,
     )
 
     return train_dataloader, test_dataloader
@@ -125,14 +144,14 @@ def tokenized_dataset(args, dataset, tokenizer):
         all_token_type_ids.append(token_type_ids)
         all_attention_mask.append(attention_mask)
 
-        if args.debug == True and idx == 100:
+        if args.debug is True and idx == 100:
             break
 
     tokenized_sentences = {
         "input_ids": torch.tensor(all_input_ids),
         "token_type_ids": torch.tensor(all_token_type_ids),
         "attention_mask": torch.tensor(all_attention_mask),
-        "label_ids": torch.tensor(all_label_ids),
+        "labels": torch.tensor(all_label_ids),
     }
 
     return tokenized_sentences
