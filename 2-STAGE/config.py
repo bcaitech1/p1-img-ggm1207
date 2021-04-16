@@ -52,18 +52,32 @@ def get_args():
 
     # train hypterparameters: Uses when training
 
-    pa("--ms_name", default="bert")
-    pa("--model_name_or_path", default="bert-base-multilingual-cased")
+    #  pa("--ms_name", default="bert")
+    #  pa("--model_name_or_path", default="bert-base-multilingual-cased")
+    pa("--ms_name", default="koelectra")
+    pa("--model_name_or_path", default="monologg/koelectra-base-discriminator")
 
     pa("--optimizer", default="adamw")
     pa("--sampler", default="random")
     pa("--epochs", default=20, type=int)
-    pa("--scheduler", default="step_lr")
-    pa("--batch_size", default=32, type=int)
+    pa("--scheduler", default="sgdr")
+    pa("--batch_size", default=16, type=int)
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)
-    pa("--learning_rate", default=5e-5, type=float)
+    #  pa("--learning_rate", default=5e-5, type=float)
     pa("--max_seq_length", default=128, type=int)
+
+    pa("--optimizer_hp", default={"lr": 5e-5}, type=dict)
+    pa(
+        "--scheduler_hp",
+        default={
+            "first_cycle_steps": 200,
+            "cycle_mult": 1.0,
+            "warmup_steps": 50,
+            "gamma": 0.5,
+        },
+        type=dict,
+    )
 
     # parsing
     args, unknown = parser.parse_known_args()

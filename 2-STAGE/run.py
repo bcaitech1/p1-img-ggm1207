@@ -32,8 +32,6 @@ def main(config, checkpoint_dir=None):
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)  # 안 쓰긴 하는데
 
-    #  run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
-
     if checkpoint_dir is not None:  # Use For PBT
         print("I'm in checkpoint_dir!!")
         path = os.path.join(checkpoint_dir, "checkpoint")
@@ -117,6 +115,8 @@ def raytune(args):
 
         # if valid score is best, auto submission
         if_best_score_auto_submit(args["save_path"])
+
+        torch.cuda.empty_cache()
 
 
 if __name__ == "__main__":

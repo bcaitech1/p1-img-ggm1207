@@ -2,6 +2,7 @@ import time
 from argparse import Namespace
 
 import torch
+import wandb
 from sklearn.metrics import accuracy_score
 
 from config import get_args
@@ -19,7 +20,7 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-def train(args, model, loss_fn, optimizer, scheduler, dataloader):
+def train(args, model, loss_fn, optimizer, dataloader):
     if isinstance(args, dict):
         args = Namespace(**args)
 
@@ -106,10 +107,12 @@ def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_datal
     for epoch in range(int(args.epochs)):
         start_time = time.time()
 
-        train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
+        train_loss = train(args, model, loss_fn, optimizer, train_dataloader)
         results = evaluate(
             args, model, loss_fn, test_dataloader, return_keys=["loss", "acc"]
         )
+
+        scheduler.step(epoch)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -119,6 +122,15 @@ def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_datal
 
         if early_stop.early_stop is True:
             break
+
+        wandb.log(
+            dict(
+                valid_loss=results["loss"],
+                valid_acc=results["acc"],
+                train_loss=train_loss,
+                learning_rate=scheduler.get_lr(),
+            )
+        )
 
         print()
 
@@ -154,12 +166,17 @@ if __name__ == "__main__":
     from prepare import load_dataloader
     from optimizers import get_optimizer, get_scheduler
 
+    wandb.init(project="p-stage-2")
+
     args = get_args()
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
+    wandb.watch(model)
+    wandb.config.update(args)
+
     train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
     loss_fn = get_lossfn(args)
     optimizer = get_optimizer(args, model)
-    #  scheduler = get_scheduler(args, optimizer)
+    scheduler = get_scheduler(args, optimizer)
 
-    run(args, model, loss_fn, optimizer, None, train_dataloader, test_dataloader)
+    run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
