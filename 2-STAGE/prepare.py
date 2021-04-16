@@ -117,18 +117,25 @@ def tokenized_dataset(args, dataset, tokenizer):
     for idx, (e01, e02, words, label) in enumerate(
         zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
     ):
-        tokens = ["[CLS]", e01, e02] + words
+        # Using Tokenizer Encode, 저절로 [CLS] , [SEP] 는 붙음
+
+        tokens = [e01, "[SEP]", e02, "[SEP]"] + words
         all_label_ids.append(label)
-        tokens = tokenizer.tokenize(" ".join(tokens))
+
+        tokens = tokenizer.encode(" ".join(tokens))
 
         if len(tokens) > args.max_seq_length - special_tokens_count:
             tokens = tokens[: (args.max_seq_length - special_tokens_count)]
 
-        tokens += ["[SEP]"]
+            tokens.append(
+                tokenizer.convert_tokens_to_ids(
+                    tokenizer.special_tokens_map["unk_token"]
+                )
+            )
 
         token_type_ids = [0] * len(tokens)
-        input_ids = tokenizer.convert_tokens_to_ids(tokens)
 
+        input_ids = tokens
         attention_mask = [1] * len(input_ids)
 
         padding_length = args.max_seq_length - len(input_ids)
