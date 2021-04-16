@@ -117,7 +117,7 @@ def tokenized_dataset(args, dataset, tokenizer):
     for idx, (e01, e02, words, label) in enumerate(
         zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
     ):
-        tokens = ["[CLS]", e01, "[SEP]", e02, "[SEP]"] + words
+        tokens = ["[CLS]", e01, e02] + words
         all_label_ids.append(label)
 
         if len(tokens) > args.max_seq_length - special_tokens_count:
@@ -215,4 +215,3 @@ if __name__ == "__main__":
         zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
     ):
         print(e01, e02, words, label)
-        break

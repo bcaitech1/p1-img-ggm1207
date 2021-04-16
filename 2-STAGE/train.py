@@ -76,7 +76,8 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
                 epoch_loss += loss.item()
 
             all_labels.extend(labels.detach().cpu().tolist())
-            all_preds.extend(preds.argmax(-1).detach().cpu().tolist())
+            print(preds.argmax(-1))
+            all_preds.extend(preds.detach().argmax(-1).cpu().tolist())
 
     if "loss" in return_keys:
         results["loss"] = epoch_loss / len(dataloader)
@@ -86,7 +87,7 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
 
     if "preds" in return_keys:
         results["preds"] = all_preds
-
+    print(all_preds)
     return results
 
 
