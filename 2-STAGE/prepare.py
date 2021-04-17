@@ -3,6 +3,7 @@ import random
 import os.path as p
 
 import torch
+from torchsampler import ImbalancedDatasetSampler
 from torch.utils.data import Dataset, DataLoader
 
 
@@ -15,6 +16,9 @@ class RE_Dataset(Dataset):
         item = {key: val[idx] for key, val in self.tokenized_dataset.items()}
         item["labels"] = torch.tensor(self.labels[idx])
         return item
+
+    def _get_label(self, idx):
+        return self.labels[idx]
 
     def __len__(self):
         return len(self.labels)
@@ -86,12 +90,17 @@ def load_dataloader(args, tokenizer):
     re_tt_dataset = RE_Dataset(tt_dataset, train_dataset["labels"])
     re_tv_dataset = RE_Dataset(tv_dataset, valid_dataset["labels"])
 
+    def callback_get_label(dataset, idx):
+        #  """ dataset: MaskDataSet  """
+        return dataset._get_label(idx)
+
     train_dataloader = DataLoader(
         re_tt_dataset,
         batch_size=args.batch_size,
-        shuffle=True,
+        #  shuffle=True,
         pin_memory=True,  # Load Faster, If Use GPU
         num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
+        sampler=ImbalancedDatasetSampler,
         drop_last=True,
     )
 
@@ -107,15 +116,6 @@ def load_dataloader(args, tokenizer):
 
 
 def tokenized_dataset(args, dataset, tokenizer):
-    # dataset keywords: "words", "e1", "e2", "labels"
-
-    #  all_input_ids = []
-    #  all_token_type_ids = []
-    #  all_attention_mask = []
-    #  all_label_ids = []
-
-    #  special_tokens_count = 1  # 사실 4개임
-
     concat_entity = []
 
     for idx, (e01, e02) in enumerate(zip(dataset["e1"], dataset["e2"])):
@@ -131,104 +131,8 @@ def tokenized_dataset(args, dataset, tokenizer):
         add_special_tokens=True,
     )
 
-    #  for idx, (e01, e02, words, label) in enumerate(
-    #      zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
-    #  ):
-    #      # Using Tokenizer Encode, 저절로 [CLS] , [SEP] 는 붙음
-    #
-    #      tokens = [e01, e02] + words
-    #      all_label_ids.append(label)
-    #
-    #      tokens = tokenizer.encode(" ".join(tokens))
-    #
-    #      if len(tokens) > args.max_seq_length - special_tokens_count:
-    #          tokens = tokens[: (args.max_seq_length - special_tokens_count)]
-    #
-    #          tokens.append(
-    #              tokenizer.convert_tokens_to_ids(
-    #                  tokenizer.special_tokens_map["unk_token"]
-    #              )
-    #          )
-    #
-    #      token_type_ids = [0] * len(tokens)
-    #
-    #      input_ids = tokens
-    #      attention_mask = [1] * len(input_ids)
-    #
-    #      padding_length = args.max_seq_length - len(input_ids)
-    #      input_ids += [tokenizer.pad_token_id] * padding_length
-    #
-    #      attention_mask += [0] * padding_length
-    #      token_type_ids += [0] * padding_length  # 질문 문제가 아니라서..
-    #
-    #      assert len(input_ids) == args.max_seq_length
-    #      assert len(attention_mask) == args.max_seq_length
-    #      assert len(token_type_ids) == args.max_seq_length
-    #
-    #      all_input_ids.append(input_ids)
-    #      all_token_type_ids.append(token_type_ids)
-    #      all_attention_mask.append(attention_mask)
-    #
-    #      if args.debug is True and idx == 100:
-    #          break
-
-    #  tokenized_sentences = {
-    #      "input_ids": torch.tensor(all_input_ids),
-    #      "token_type_ids": torch.tensor(all_token_type_ids),
-    #      "attention_mask": torch.tensor(all_attention_mask),
-    #      "labels": torch.tensor(all_label_ids),
-    #  }
-
     return tokenized_sentences
 
-
-#  def preprocessing_dataset(dataset, label_type):
-#      """ 원하는 형태의 dataset으로 전처리 """
-#      label = []
-#      for i in dataset[8]:
-#          if i == "blind":
-#              label.append(100)
-#          else:
-#              label.append(label_type[i])
-#
-#      out_dataset = pd.DataFrame(
-#          {"sentence": dataset[1], "entity_01": dataset[2], "entity_02": dataset[5]}
-#      )
-#
-#      return out_dataset, label
-
-
-#  def tokenized_dataset(args, dataset, tokenizer):
-#      # dataset keywords: "words", "e1", "e2", "labels"
-#      concat_entity = []
-#
-#      for e01, e02 in zip(dataset["e1"], dataset["e2"]):
-#          temp = e01 + "[SEP]" + e02
-#          concat_entity.append(temp)
-#
-#      tokenized_sentences = tokenizer(
-#          concat_entity,
-#          dataset["words"],
-#          return_tensors="pt",
-#          padding=True,
-#          truncation=True,
-#          add_special_tokens=True,
-#          max_length=args.token_max_length,
-#      )
-#
-#      return tokenized_sentences
-
-
-#  def load_dataset(args, tokenizer, is_train=True):
-#      tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
-#      dataset, label = load_data(args, is_train=is_train)
-#
-#      # word to token
-#      to_dataset = tokenized_dataset(dataset, tokenizer)
-#
-#      # hmm... return (dict type)
-#      re_train_dataset = RE_Dataset(to_dataset, label)
-#      return re_train_dataset, tokenizer
 
 if __name__ == "__main__":
     from config import get_args
