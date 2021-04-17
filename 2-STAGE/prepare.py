@@ -91,7 +91,6 @@ def load_dataloader(args, tokenizer):
     re_tv_dataset = RE_Dataset(tv_dataset, valid_dataset["labels"])
 
     def callback_get_label(dataset, idx):
-        #  """ dataset: MaskDataSet  """
         return dataset._get_label(idx)
 
     train_dataloader = DataLoader(
@@ -100,7 +99,9 @@ def load_dataloader(args, tokenizer):
         #  shuffle=True,
         pin_memory=True,  # Load Faster, If Use GPU
         num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
-        sampler=ImbalancedDatasetSampler,
+        sampler=ImbalancedDatasetSampler(
+            re_tt_dataset, callback_get_label=callback_get_label
+        ),
         drop_last=True,
     )
 
