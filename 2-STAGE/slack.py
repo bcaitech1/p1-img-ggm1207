@@ -48,8 +48,8 @@ def hook_fail_strategy(strategy, error):
     print(res)
 
 
-def hook_fail_ray():
-    text = f"@channel \n{'-'*30}\n*RAY FAILED!!!* Warning!!!\n:warning::warning::warning::warning::warning::warning::warning:"
+def hook_fail_ray(error):
+    text = f"@channel \n{'-'*30}\n*RAY FAILED!!!* Warning!!!\n:warning::warning::warning::warning::warning::warning::warning:\n*ERROR*: {str(error)[:40]}"
     img_url = random.choice(bad_image_url)
     data = get_format_data(text, img_url)
     res = requests.post(ul, headers=headers, data=json.dumps(data))

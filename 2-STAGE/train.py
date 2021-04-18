@@ -1,4 +1,5 @@
 import time
+import traceback
 from argparse import Namespace
 
 import torch
@@ -151,11 +152,11 @@ def debug(args, strategy):
         query = f"UPDATE STRATEGY SET STATUS = 'RUN' WHERE strategy='{strategy}'"
         execute_query(query)
 
-    except Exception as e:
-        print(e.with_traceback())
+    except Exception:
+        err_message = traceback.format_exc()
         query = f"UPDATE STRATEGY SET STATUS = 'PENDING' WHERE strategy='{strategy}'"
         execute_query(query)
-        hook_fail_strategy(strategy, e.with_traceback())
+        hook_fail_strategy(strategy, err_message)
 
 
 if __name__ == "__main__":

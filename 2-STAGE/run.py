@@ -1,4 +1,5 @@
 import os
+import traceback
 from importlib import reload
 from argparse import Namespace
 
@@ -11,14 +12,14 @@ from ray.tune.integration.wandb import wandb_mixin
 import hp_space
 from config import get_args
 from losses import get_lossfn
-from slack import hook_simple_text
 from prepare import load_dataloader
 from database import sample_strategy
 from train import train, evaluate, debug
+from utils import update_args, EarlyStopping
 from networks import load_model_and_tokenizer
 from inference import if_best_score_auto_submit
+from slack import hook_simple_text, hook_fail_ray
 from optimizers import get_optimizer, get_scheduler
-from utils import update_args, EarlyStopping
 
 
 @wandb_mixin
@@ -132,9 +133,9 @@ def raytune(args):
 
 if __name__ == "__main__":
     args = get_args()
-    raytune(args)
 
-    #  while True:
-    #      reload(hp_space)
-    #      print(hp_space.strat)
-    #      time.sleep(5)
+    try:
+        raytune(args)
+    except Exception:
+        err_message = traceback.format_exc()
+        hook_fail_ray(err_message)
