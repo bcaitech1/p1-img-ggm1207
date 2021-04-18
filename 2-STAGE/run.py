@@ -115,7 +115,7 @@ def raytune(args):
             metric="valid_loss",
             mode="min",
             keep_checkpoints_num=3,
-            num_samples=3,
+            num_samples=8,
             resources_per_trial={"cpu": 8, "gpu": 1},
             config=args,
         )

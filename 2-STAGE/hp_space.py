@@ -69,7 +69,7 @@ strat["st01"] = {
     "seed": tune.randint(0, 10000),
     "batch_size": tune.choice([32, 64]),
     "max_seq_length": tune.choice([128, 256]),
-    "optimizer_hp": {"lr": tune.uniform([3e-5, 1e-4]), "eps": 1e-8},
+    "optimizer_hp": {"lr": tune.uniform(3e-5, 1e-4), "eps": 1e-8},
 }
 
 # koelec_v3, dataset_v1, adam, warm_up
@@ -85,5 +85,5 @@ strat["st02"] = {
     "seed": tune.randint(0, 10000),
     "batch_size": tune.choice([32, 64]),
     "max_seq_length": tune.choice([128, 256]),
-    "optimizer_hp": {"lr": tune.uniform([3e-5, 1e-4]), "eps": 1e-8},
+    "optimizer_hp": {"lr": tune.uniform(3e-5, 1e-4), "eps": 1e-8},
 }
