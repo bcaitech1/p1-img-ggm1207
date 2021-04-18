@@ -49,5 +49,5 @@ LOSSES = {
 
 
 def get_lossfn(args, tokenizer):
-    args.loss_hp["ignore_index"] = tokenizer.pad_token_id
+    #  args.loss_hp["ignore_index"] = tokenizer.pad_token_id
     return LOSSES[args.loss_name](**args.loss_hp)

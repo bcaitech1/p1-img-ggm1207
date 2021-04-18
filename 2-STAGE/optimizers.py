@@ -170,8 +170,8 @@ def get_scheduler(args, optimizer):
     return SCHEDULER[args.scheduler](optimizer, **args.scheduler_hp)
 
 
-def get_sampler(args):
-    if args.sampler not in SAMPLER.keys():
-        raise KeyError(f"{args.sampler} not in SAMPLER")
-
-    return SAMPLER[args.sampler]
+#  def get_sampler(args):
+#      if args.sampler not in SAMPLER.keys():
+#          raise KeyError(f"{args.sampler} not in SAMPLER")
+#
+#      return SAMPLER[args.sampler]

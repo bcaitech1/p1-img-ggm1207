@@ -71,6 +71,7 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
             labels = batch["labels"].to(args.device)
 
             preds = model(**inputs, return_dict=True)
+            print(preds.logits.argmax(-1), labels)
 
             if "loss" in return_keys:
                 loss = loss_fn(preds.logits, labels)
@@ -94,6 +95,7 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
 def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader):
     """ train, evaluate for range(epochs), no hyperparameter search """
     args.save_path, _ = get_auto_save_path(args)
+    print(args)
     early_stop = EarlyStopping(args, verbose=True)
 
     if isinstance(args, dict):

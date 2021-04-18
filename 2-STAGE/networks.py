@@ -40,7 +40,7 @@ def load_model_and_tokenizer(args):
         args.model_name_or_path, config=config
     )
 
-    model.parameters
+    #  model.parameters
     model.to(args.device)
     tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
     return model, tokenizer

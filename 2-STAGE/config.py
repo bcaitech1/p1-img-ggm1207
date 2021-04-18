@@ -55,13 +55,14 @@ def get_args():
     #  pa("--ms_name", default="bert")
     #  pa("--model_name_or_path", default="bert-base-multilingual-cased")
     pa("--ms_name", default="koelectra")
-    pa("--model_name_or_path", default="monologg/koelectra-base-discriminator")
+    pa("--model_name_or_path", default="monologg/koelectra-small-v3-discriminator")
 
+    # loss, optimizer, scheduler
     pa("--loss_name", default="CE")
     pa("--optimizer", default="adamw")
-    pa("--sampler", default="random")
-    pa("--epochs", default=20, type=int)
     pa("--scheduler", default="sgdr")
+
+    pa("--epochs", default=20, type=int)
     pa("--batch_size", default=16, type=int)
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)
@@ -73,9 +74,9 @@ def get_args():
     pa(
         "--scheduler_hp",
         default={
-            "first_cycle_steps": 200,
+            "first_cycle_steps": 8,
             "cycle_mult": 1.0,
-            "warmup_steps": 50,
+            "warmup_steps": 2,
             "gamma": 0.5,
         },
         type=dict,
