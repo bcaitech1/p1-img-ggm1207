@@ -86,21 +86,20 @@ def raytune(args):
         args = vars(args)  # Namespace to dict
 
     while True:
-        # status가 ready면 우선 Debug로 잘 돌아가는지 실험해보자.
         reload(hp_space)
         strategy, status, _, _ = sample_strategy()
-
-        if status == "READY":
-            debug(args, strategy)
-            torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
-            continue
 
         # update hp_space, dataset_idx, wandb, save_path, base_name
         args = update_args(args, strategy, hp_space.strat)
 
+        if status == "READY":  # if status == "READY" then Check pipeline
+            debug(args, strategy)
+            torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
+            continue
+
         scheduler = PopulationBasedTraining(
             perturbation_interval=1,
-            hyperparam_mutations={
+            hyperparam_mutations={  # use when explore
                 "learning_rate": tune.uniform(0.0001, 1),
                 "weight_decay": tune.uniform(0.001, 0.05),
             },
@@ -117,7 +116,7 @@ def raytune(args):
             mode="min",
             keep_checkpoints_num=3,
             num_samples=3,
-            resources_per_trial={"cpu": 4, "gpu": 1},
+            resources_per_trial={"cpu": 8, "gpu": 1},
             config=args,
         )
 
@@ -125,7 +124,6 @@ def raytune(args):
 
         hook_simple_text(f":joy: {args['base_name']} 학습 끝!!!")
 
-        # if valid score is best, auto submission
         if_best_score_auto_submit(args["save_path"])
 
         torch.cuda.empty_cache()

@@ -53,30 +53,37 @@ from ray import tune
 
 strat = dict()
 
-# 기본 모델, 데이터셋 + adamw
+
+# 가벼운 모델을 사용하자...
+
+# koelec_v3, dataset_v1, adamw, warm_up
 strat["st01"] = {
     "strategy": "st01",
+    "do_lower_case": False,
+    "ms_name": "koelec_v3",
+    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",
-    "ms_name": "base_multi_bert",
-    "model_name_or_path": "bert-base-multilingual-cased",
-    "batch_size": tune.choice([32, 64]),
-    "max_seq_length": tune.choice([128, 256]),
     "optimizer": "adamw",
-    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
     "scheduler": "warm_up",
     "scheduler_hp": {"num_warmup_steps": 0},
+    "seed": tune.randint(0, 10000),
+    "batch_size": tune.choice([32, 64]),
+    "max_seq_length": tune.choice([128, 256]),
+    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
 }
 
-# 기본 모델, 데이터셋 + adam
+# koelec_v3, dataset_v1, adam, warm_up
 strat["st02"] = {
     "strategy": "st02",
+    "do_lower_case": False,
+    "ms_name": "koelec_v3",
+    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",
-    "ms_name": "base_multi_bert",
-    "model_name_or_path": "bert-base-multilingual-cased",
-    "batch_size": tune.choice([32, 64]),
-    "max_seq_length": tune.choice([128, 256]),
     "optimizer": "adam",
-    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
     "scheduler": "warm_up",
     "scheduler_hp": {"num_warmup_steps": 0},
+    "seed": tune.randint(0, 10000),
+    "batch_size": tune.choice([32, 64]),
+    "max_seq_length": tune.choice([128, 256]),
+    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
 }

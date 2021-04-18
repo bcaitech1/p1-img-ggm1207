@@ -62,6 +62,7 @@ def get_args():
     pa("--optimizer", default="adamw")
     #  pa("--scheduler", default="sgdr")
     pa("--scheduler", default="warm_up")
+    pa("--do_lower_case", default=False, type=str2bool)
 
     pa("--epochs", default=20, type=int)
     pa("--batch_size", default=64, type=int)
