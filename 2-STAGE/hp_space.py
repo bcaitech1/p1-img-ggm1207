@@ -59,7 +59,6 @@ strat = dict()
 # koelec_v3, dataset_v1, adamw, warm_up
 strat["st01"] = {
     "strategy": "st01",
-    "do_lower_case": False,
     "ms_name": "koelecv3",
     "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",
@@ -75,7 +74,6 @@ strat["st01"] = {
 # koelec_v3, dataset_v1, adam, warm_up
 strat["st02"] = {
     "strategy": "st02",
-    "do_lower_case": False,
     "ms_name": "koelecv3",
     "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",

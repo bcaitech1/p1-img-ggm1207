@@ -100,8 +100,8 @@ def raytune(args):
         scheduler = PopulationBasedTraining(
             perturbation_interval=1,
             hyperparam_mutations={  # use when explore
-                "learning_rate": tune.uniform(0.0001, 1),
-                "weight_decay": tune.uniform(0.001, 0.05),
+                "learning_rate": tune.uniform(0.0001, 0.001),
+                "weight_decay": tune.uniform(0.001, 0.02),
             },
         )
 

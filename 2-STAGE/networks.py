@@ -42,7 +42,5 @@ def load_model_and_tokenizer(args):
 
     #  model.parameters
     model.to(args.device)
-    tokenizer = AutoTokenizer.from_pretrained(
-        args.model_name_or_path, args.do_lower_case
-    )
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
     return model, tokenizer
