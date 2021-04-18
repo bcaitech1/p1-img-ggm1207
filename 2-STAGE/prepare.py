@@ -186,7 +186,7 @@ def tokenized_dataset(args, dataset, tokenizer):
         return_tensors="pt",
         padding=True,
         truncation=True,
-        max_length=128,  # 길수록 속도 느려짐
+        max_length=args.max_seq_length,  # 길수록 속도 느려짐
         add_special_tokens=True,
     )
 

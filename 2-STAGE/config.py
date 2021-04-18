@@ -60,6 +60,7 @@ def get_args():
     # loss, optimizer, scheduler
     pa("--loss_name", default="CE")
     pa("--optimizer", default="adamw")
+    #  pa("--scheduler", default="sgdr")
     pa("--scheduler", default="warm_up")
 
     pa("--epochs", default=20, type=int)
@@ -76,18 +77,19 @@ def get_args():
     pa("--loss_hp", default={"reduction": "sum"})
     pa("--optimizer_hp", default={"lr": 5e-5, "eps": 1e-8}, type=dict)
 
-    #  pa(
-    #      "--scheduler_hp",
-    #      default={
-    #          "first_cycle_steps": 8,
-    #          "cycle_mult": 1.0,
-    #          "warmup_steps": 2,
-    #          "gamma": 0.5,
-    #      },
-    #      type=dict,
-    #  )
+    pa(
+        "--scheduler_hp",
+        default={
+            "first_cycle_steps": 8,
+            "cycle_mult": 1.0,
+            "warmup_steps": 2,
+            "gamma": 0.5,
+        },
+        type=dict,
+    )
 
-    pa("--scheduler_hp", default={"num_warmup_steps": 0}, type=dict)
+    #  pa("--scheduler_hp", default={"num_warmup_steps": 0}, type=dict)
+
     # parsing
     args, unknown = parser.parse_known_args()
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

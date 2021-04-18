@@ -73,7 +73,6 @@ class EarlyStopping:
             self.save_checkpoint(valid_loss, model)
             self.best_valid_loss = valid_loss
             self.counter = 0
-
         else:
             self.counter += 1
             print(f"EarlyStopping counter: {self.counter} out of {self.patience}")

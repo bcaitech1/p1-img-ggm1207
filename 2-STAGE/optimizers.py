@@ -54,6 +54,9 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
             param_group["lr"] = self.min_lr
             self.base_lrs.append(self.min_lr)
 
+    def get_last_lr(self):
+        return self.get_lr()
+
     def get_lr(self):
         if self.step_in_cycle == -1:
             return self.base_lrs

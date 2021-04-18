@@ -52,18 +52,31 @@
 from ray import tune
 
 strat = dict()
+
+# 기본 모델, 데이터셋 + adamw
 strat["st01"] = {
     "strategy": "st01",
     "data_kind": "dataset_v1",
-    "ms_name": "multibert",
-    "model_name_or_path": "monologg/koelectra-base-discriminator",
-    #  "model_name_or_path": "bert-base-multilingual-cased",
-    "batch_size": tune.choice([32]),
-    "max_seq_length": 256,
-    "weight_decay": tune.uniform(0.001, 0.02),
-    "learning_rate": tune.uniform(3e-4, 3e-3),
+    "ms_name": "base_multi_bert",
+    "model_name_or_path": "bert-base-multilingual-cased",
+    "batch_size": tune.choice([32, 64]),
+    "max_seq_length": tune.choice([128, 256]),
     "optimizer": "adamw",
-    "optimizer_hp": {"test": 3},
-    "scheduler": "step_lr",
-    "scheduler_hp": {"test": 3},
+    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 0},
+}
+
+# 기본 모델, 데이터셋 + adam
+strat["st02"] = {
+    "strategy": "st02",
+    "data_kind": "dataset_v1",
+    "ms_name": "base_multi_bert",
+    "model_name_or_path": "bert-base-multilingual-cased",
+    "batch_size": tune.choice([32, 64]),
+    "max_seq_length": tune.choice([128, 256]),
+    "optimizer": "adam",
+    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 0},
 }
