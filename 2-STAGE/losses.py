@@ -3,10 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 
-def get_lossfn(args):
-    return FocalLoss(gamma=3)
-
-
 class LabelSmoothingLoss(nn.Module):
     def __init__(self, classes=42, smoothing=0.1, dim=-1):
         super(LabelSmoothingLoss, self).__init__()
@@ -26,32 +22,6 @@ class LabelSmoothingLoss(nn.Module):
         return torch.mean(torch.sum(-true_dist * pred, dim=self.dim))
 
 
-#  class F1Loss(nn.Module):
-#      def __init__(self, classes=3, epsilon=1e-7):
-#          super().__init__()
-#          self.classes = classes
-#          self.epsilon = epsilon
-#
-#      def forward(self, y_pred, y_true):
-#          assert y_pred.ndim == 2
-#          assert y_true.ndim == 1
-#
-#          y_true = F.one_hot(y_true, self.classes).to(torch.float32)
-#          y_pred = F.softmax(y_pred, dim=1)
-#
-#          tp = (y_true * y_pred).sum(dim=0).to(torch.float32)
-#          tn = ((1 - y_true) * (1 - y_pred)).sum(dim=0).to(torch.float32)
-#          fp = ((1 - y_true) * y_pred).sum(dim=0).to(torch.float32)
-#          fn = (y_true * (1 - y_pred)).sum(dim=0).to(torch.float32)
-#
-#          precision = tp / (tp + fp + self.epsilon)
-#          recall = tp / (tp + fn + self.epsilon)
-#
-#          f1 = 2 * (precision * recall) / (precision + recall + self.epsilon)
-#          f1 = f1.clamp(min=self.epsilon, max=1 - self.epsilon)
-#          return 1 - f1.mean()
-
-
 class FocalLoss(nn.Module):
     def __init__(self, weight=None, gamma=2.0, reduction="mean"):
         nn.Module.__init__(self)
@@ -69,3 +39,15 @@ class FocalLoss(nn.Module):
             weight=self.weight,
             reduction=self.reduction,
         )
+
+
+LOSSES = {
+    "focal": FocalLoss,
+    "smoothing": LabelSmoothingLoss,
+    "CE": nn.CrossEntropyLoss,
+}
+
+
+def get_lossfn(args, tokenizer):
+    args.loss_hp["ignore_index"] = tokenizer.pad_token_id
+    return LOSSES[args.loss_name](**args.loss_hp)

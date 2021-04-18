@@ -38,10 +38,8 @@ def train(args, model, loss_fn, optimizer, dataloader):
 
         labels = batch["labels"].to(args.device)
 
-        preds = model(**inputs)
-        preds = preds[0]  # preds.logits
-
-        loss = loss_fn(preds, labels)
+        preds = model(**inputs, return_dict=True)
+        loss = loss_fn(preds.logits, labels)
 
         loss.backward()
         optimizer.step()
@@ -72,16 +70,14 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
 
             labels = batch["labels"].to(args.device)
 
-            preds = model(**inputs)
-            preds = preds[0]
+            preds = model(**inputs, return_dict=True)
 
             if "loss" in return_keys:
-                loss = loss_fn(preds, labels)
+                loss = loss_fn(preds.logits, labels)
                 epoch_loss += loss.item()
 
             all_labels.extend(labels.detach().cpu().tolist())
-            print(preds.argmax(-1))
-            all_preds.extend(preds.detach().argmax(-1).cpu().tolist())
+            all_preds.extend(preds.logits.detach().argmax(-1).cpu().tolist())
 
     if "loss" in return_keys:
         results["loss"] = epoch_loss / len(dataloader)
@@ -92,7 +88,6 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
     if "preds" in return_keys:
         results["preds"] = all_preds
 
-    print(all_preds)
     return results
 
 
@@ -175,10 +170,8 @@ if __name__ == "__main__":
     wandb.config.update(args)
 
     train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
-    loss_fn = get_lossfn(args)
+    loss_fn = get_lossfn(args, tokenizer)
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)
 
-    print(scheduler.get_lr())
-
-    #  run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
+    run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)

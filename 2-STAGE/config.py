@@ -57,6 +57,7 @@ def get_args():
     pa("--ms_name", default="koelectra")
     pa("--model_name_or_path", default="monologg/koelectra-base-discriminator")
 
+    pa("--loss_name", default="CE")
     pa("--optimizer", default="adamw")
     pa("--sampler", default="random")
     pa("--epochs", default=20, type=int)
@@ -67,6 +68,7 @@ def get_args():
     #  pa("--learning_rate", default=5e-5, type=float)
     pa("--max_seq_length", default=128, type=int)
 
+    pa("--loss_hp", default={"reduction": "sum"})
     pa("--optimizer_hp", default={"lr": 5e-5}, type=dict)
     pa(
         "--scheduler_hp",

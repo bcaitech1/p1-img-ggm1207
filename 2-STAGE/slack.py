@@ -1,10 +1,10 @@
-import time
+import json
 import random
-import requests, json
+import requests
 
-#  ul = "https://hooks.slack.com/services/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" # sub_b조
+#  ul = "https://hooks.slack.com/services/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" # channel: sub_b
 
-ul = "https://hooks.slack.com/services/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"
+ul = "https://hooks.slack.com/services/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"  # channel: gunmo_t1003
 headers = {"Content-Type": "application/json"}
 
 good_image_url = [
@@ -45,6 +45,7 @@ def hook_fail_strategy(strategy, error):
     img_url = random.choice(bad_image_url)
     data = get_format_data(text, img_url)
     res = requests.post(ul, headers=headers, data=json.dumps(data))
+    print(res)
 
 
 def hook_fail_ray():
@@ -52,6 +53,7 @@ def hook_fail_ray():
     img_url = random.choice(bad_image_url)
     data = get_format_data(text, img_url)
     res = requests.post(ul, headers=headers, data=json.dumps(data))
+    print(res)
 
 
 def hook_simple_text(text):
@@ -66,6 +68,7 @@ def hook_simple_text(text):
     }
 
     res = requests.post(ul, headers=headers, data=json.dumps(data))
+    print(res)
 
 
 #  def hook_error_message(strategy):
