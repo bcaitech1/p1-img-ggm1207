@@ -133,7 +133,7 @@ def load_sample(args, tokenizer):
         "token_type_ids": batch["token_type_ids"].to(args.device).unsqueeze(0),
     }
 
-    labels = (batch["labels"].to(args.device).unsqueeze(0),)
+    labels = batch["labels"].to(args.device).unsqueeze(0)
 
     return inputs, labels
 
