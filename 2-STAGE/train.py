@@ -143,8 +143,8 @@ def debug(args, strategy):
         loss_fn = get_lossfn(args)
 
         inputs, labels = load_sample(args, tokenizer)
-        preds = model(**inputs)
-        _ = loss_fn(preds, labels)
+        preds = model(**inputs, return_dict=True)
+        _ = loss_fn(preds.logits, labels)
 
         query = f"UPDATE STRATEGY SET STATUS = 'RUN' WHERE strategy='{strategy}'"
         execute_query(query)
