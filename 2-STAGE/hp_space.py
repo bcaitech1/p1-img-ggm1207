@@ -60,7 +60,7 @@ strat = dict()
 strat["st01"] = {
     "strategy": "st01",
     "ms_name": "koelecv3",
-    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
     "data_kind": "dataset_v1",
     "optimizer": "adamw",
     "scheduler": "warm_up",
@@ -75,7 +75,7 @@ strat["st01"] = {
 strat["st02"] = {
     "strategy": "st02",
     "ms_name": "koelecv3",
-    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
     "data_kind": "dataset_v1",
     "optimizer": "adam",
     "scheduler": "warm_up",
