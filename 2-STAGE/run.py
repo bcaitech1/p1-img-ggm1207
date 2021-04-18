@@ -1,4 +1,5 @@
 import os
+from importlib import reload
 from argparse import Namespace
 
 import torch
@@ -7,16 +8,16 @@ from ray import tune
 from ray.tune.schedulers import PopulationBasedTraining
 from ray.tune.integration.wandb import wandb_mixin
 
+import hp_space
 from config import get_args
-from losses import FocalLoss
+from losses import get_lossfn
+from slack import hook_simple_text
 from prepare import load_dataloader
+from database import sample_strategy
 from train import train, evaluate, debug
 from networks import load_model_and_tokenizer
-from optimizers import get_optimizer, get_scheduler
-
-from database import sample_strategy
 from inference import if_best_score_auto_submit
-from hook_slack import hook_simple_text
+from optimizers import get_optimizer, get_scheduler
 from utils import update_args, EarlyStopping
 
 
@@ -26,11 +27,11 @@ def main(config, checkpoint_dir=None):
     args = Namespace(**config)
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
-    train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
-    loss_fn = FocalLoss(gamma=3)
+    train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
 
+    loss_fn = get_lossfn(args)
     optimizer = get_optimizer(args, model)
-    scheduler = get_scheduler(args, optimizer)  # 안 쓰긴 하는데
+    scheduler = get_scheduler(args, optimizer)
 
     if checkpoint_dir is not None:  # Use For PBT
         print("I'm in checkpoint_dir!!")
@@ -45,17 +46,26 @@ def main(config, checkpoint_dir=None):
 
     while True:
         train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
-        valid_loss, valid_acc = evaluate(args, model, loss_fn, test_dataloader)
+        results = evaluate(
+            args, model, loss_fn, valid_dataloader, return_keys=["loss", "acc"]
+        )
 
-        es_helper(train_loss, valid_loss, valid_acc, model)
+        es_helper(train_loss, results["loss"], results["acc"], model)
 
         # wandb.log는 tune.report, tune.checkpoint_dir 보다 선행 되어야 한다.
         wandb.log(
-            dict(valid_loss=valid_loss, valid_acc=valid_acc, train_loss=train_loss)
+            dict(
+                valid_loss=results["loss"],
+                valid_acc=results["acc"],
+                train_loss=train_loss,
+                learning_rate=scheduler.get_last_lr()[0],
+            )
         )
 
         # 뭔지 모르겠지만 여기서 걍 끝남.
-        tune.report(valid_loss=valid_loss, valid_acc=valid_acc, train_loss=train_loss)
+        tune.report(
+            valid_loss=results["loss"], valid_acc=results["acc"], train_loss=train_loss
+        )
 
         with tune.checkpoint_dir(step=step) as checkpoint_dir:
             path = os.path.join(checkpoint_dir, "checkpoint")
@@ -76,6 +86,7 @@ def raytune(args):
 
     while True:
         # status가 ready면 우선 Debug로 잘 돌아가는지 실험해보자.
+        reload(hp_space)
         strategy, status, _, _ = sample_strategy()
 
         if status == "READY":
@@ -84,7 +95,7 @@ def raytune(args):
             continue
 
         # update hp_space, dataset_idx, wandb, save_path, base_name
-        args = update_args(args, strategy)
+        args = update_args(args, strategy, hp_space.strat)
 
         scheduler = PopulationBasedTraining(
             perturbation_interval=1,
@@ -122,3 +133,8 @@ def raytune(args):
 if __name__ == "__main__":
     args = get_args()
     raytune(args)
+
+    #  while True:
+    #      reload(hp_space)
+    #      print(hp_space.strat)
+    #      time.sleep(5)

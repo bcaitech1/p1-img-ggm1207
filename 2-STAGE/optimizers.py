@@ -3,6 +3,7 @@ import math
 import torch.optim as optim
 from torch.utils.data import RandomSampler
 from torch.optim.lr_scheduler import _LRScheduler
+from transformers import get_linear_schedule_with_warmup
 
 
 class CosineAnnealingWarmupRestarts(_LRScheduler):
@@ -131,6 +132,7 @@ SCHEDULER = {
     "cosine_warm_lr": optim.lr_scheduler.CosineAnnealingWarmRestarts,
     "sgdr": CosineAnnealingWarmupRestarts,
     "step_lr": optim.lr_scheduler.StepLR,
+    "warm_up": get_linear_schedule_with_warmup,
 }
 
 SAMPLER = {"random": RandomSampler}
@@ -166,6 +168,9 @@ def get_optimizer(args, model):
 def get_scheduler(args, optimizer):
     if args.scheduler not in SCHEDULER.keys():
         raise KeyError(f"{args.scheduler} not in SCHEDULER")
+
+    if args.scheduler == "warm_up":
+        args.scheduler_hp["num_training_steps"] = 119 * args.epochs
 
     return SCHEDULER[args.scheduler](optimizer, **args.scheduler_hp)
 

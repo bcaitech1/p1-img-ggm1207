@@ -33,11 +33,11 @@ class BertClassifier(nn.Module):
 
 
 def load_model_and_tokenizer(args):
-    config = AutoConfig.from_pretrained(args.model_name_or_path)
-    config.num_labels = 42
+    bert_config = AutoConfig.from_pretrained(args.model_name_or_path)
+    bert_config.num_labels = 42
 
     model = AutoModelForSequenceClassification.from_pretrained(
-        args.model_name_or_path, config=config
+        args.model_name_or_path, config=bert_config
     )
 
     #  model.parameters

@@ -20,7 +20,7 @@ def epoch_time(start_time, end_time):
     return elapsed_mins, elapsed_secs
 
 
-def train(args, model, loss_fn, optimizer, dataloader):
+def train(args, model, loss_fn, optimizer, scheduler, dataloader):
     if isinstance(args, dict):
         args = Namespace(**args)
 
@@ -29,6 +29,7 @@ def train(args, model, loss_fn, optimizer, dataloader):
 
     for i, batch in enumerate(dataloader):
         optimizer.zero_grad()
+        #  model.zero_grad()
 
         inputs = {
             "input_ids": batch["input_ids"].to(args.device),
@@ -42,7 +43,10 @@ def train(args, model, loss_fn, optimizer, dataloader):
         loss = loss_fn(preds.logits, labels)
 
         loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip)
         optimizer.step()
+        scheduler.step()
 
         epoch_loss += loss.item()
 
@@ -71,7 +75,6 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
             labels = batch["labels"].to(args.device)
 
             preds = model(**inputs, return_dict=True)
-            print(preds.logits.argmax(-1), labels)
 
             if "loss" in return_keys:
                 loss = loss_fn(preds.logits, labels)
@@ -92,10 +95,9 @@ def evaluate(args, model, loss_fn, dataloader, return_keys=["loss", "acc"]):
     return results
 
 
-def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader):
+def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, valid_dataloader):
     """ train, evaluate for range(epochs), no hyperparameter search """
     args.save_path, _ = get_auto_save_path(args)
-    print(args)
     early_stop = EarlyStopping(args, verbose=True)
 
     if isinstance(args, dict):
@@ -104,12 +106,10 @@ def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_datal
     for epoch in range(int(args.epochs)):
         start_time = time.time()
 
-        train_loss = train(args, model, loss_fn, optimizer, train_dataloader)
+        train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
         results = evaluate(
-            args, model, loss_fn, test_dataloader, return_keys=["loss", "acc"]
+            args, model, loss_fn, valid_dataloader, return_keys=["loss", "acc"]
         )
-
-        scheduler.step(epoch)
 
         end_time = time.time()
         epoch_mins, epoch_secs = epoch_time(start_time, end_time)
@@ -125,7 +125,7 @@ def run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_datal
                 valid_loss=results["loss"],
                 valid_acc=results["acc"],
                 train_loss=train_loss,
-                learning_rate=scheduler.get_lr()[0],
+                learning_rate=scheduler.get_last_lr()[0],
             )
         )
 
@@ -171,9 +171,9 @@ if __name__ == "__main__":
     wandb.watch(model)
     wandb.config.update(args)
 
-    train_dataloader, test_dataloader = load_dataloader(args, tokenizer)
-    loss_fn = get_lossfn(args, tokenizer)
+    train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
+    loss_fn = get_lossfn(args)
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)
 
-    run(args, model, loss_fn, optimizer, scheduler, train_dataloader, test_dataloader)
+    run(args, model, loss_fn, optimizer, scheduler, train_dataloader, valid_dataloader)

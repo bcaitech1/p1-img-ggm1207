@@ -33,7 +33,8 @@ class ImbalancedDatasetSampler(Sampler):
         self.num_samples = len(self.indices) if num_samples is None else num_samples
 
         # distribution of classes in the dataset
-        label_to_count = {}
+        label_to_count: dict = {}
+
         for idx in self.indices:
             label = self._get_label(dataset, idx)
             label_to_count[label] = label_to_count.get(label, 0) + 1
@@ -42,6 +43,7 @@ class ImbalancedDatasetSampler(Sampler):
         weights = [
             1.0 / label_to_count[self._get_label(dataset, idx)] for idx in self.indices
         ]
+
         self.weights = torch.DoubleTensor(weights)
 
     def _get_label(self, dataset, idx):
@@ -175,7 +177,8 @@ def tokenized_dataset(args, dataset, tokenizer):
     concat_entity = []
 
     for idx, (e01, e02) in enumerate(zip(dataset["e1"], dataset["e2"])):
-        concat_entity.append(e01 + "[SEP]" + e02)
+        #  concat_entity.append(e01 + "[SEP]" + e02)
+        concat_entity.append(e01 + tokenizer.special_tokens_map["sep_token"] + e02)
 
     tokenized_sentences = tokenizer(
         concat_entity,
@@ -183,7 +186,7 @@ def tokenized_dataset(args, dataset, tokenizer):
         return_tensors="pt",
         padding=True,
         truncation=True,
-        max_length=256,
+        max_length=128,  # 길수록 속도 느려짐
         add_special_tokens=True,
     )
 

@@ -60,28 +60,34 @@ def get_args():
     # loss, optimizer, scheduler
     pa("--loss_name", default="CE")
     pa("--optimizer", default="adamw")
-    pa("--scheduler", default="sgdr")
+    pa("--scheduler", default="warm_up")
 
     pa("--epochs", default=20, type=int)
-    pa("--batch_size", default=16, type=int)
+    pa("--batch_size", default=64, type=int)
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)
+    pa("--clip", default=1.0, type=float)
     #  pa("--learning_rate", default=5e-5, type=float)
     pa("--max_seq_length", default=128, type=int)
 
-    pa("--loss_hp", default={"reduction": "sum"})
-    pa("--optimizer_hp", default={"lr": 5e-5}, type=dict)
-    pa(
-        "--scheduler_hp",
-        default={
-            "first_cycle_steps": 8,
-            "cycle_mult": 1.0,
-            "warmup_steps": 2,
-            "gamma": 0.5,
-        },
-        type=dict,
-    )
+    # batch sizes: 8, 16, 32, 64, 128
+    # learning rates: 3e-4. 1e-4. 5e-5. 3e-5
 
+    pa("--loss_hp", default={"reduction": "sum"})
+    pa("--optimizer_hp", default={"lr": 5e-5, "eps": 1e-8}, type=dict)
+
+    #  pa(
+    #      "--scheduler_hp",
+    #      default={
+    #          "first_cycle_steps": 8,
+    #          "cycle_mult": 1.0,
+    #          "warmup_steps": 2,
+    #          "gamma": 0.5,
+    #      },
+    #      type=dict,
+    #  )
+
+    pa("--scheduler_hp", default={"num_warmup_steps": 0}, type=dict)
     # parsing
     args, unknown = parser.parse_known_args()
     args.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")

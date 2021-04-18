@@ -6,8 +6,6 @@ from argparse import Namespace
 
 import torch
 
-from hp_space import strat
-
 
 def custom_model_save(model, save_path):
     torch.save(model.state_dict(), save_path)
@@ -29,7 +27,7 @@ def get_auto_save_path(args):
     return save_path, base_name
 
 
-def update_args(args, strategy):
+def update_args(args, strategy, strat):
     """ this function use for hp search, Parallelism should be considered """
 
     if isinstance(args, Namespace):
@@ -74,6 +72,7 @@ class EarlyStopping:
         if valid_loss < self.best_valid_loss - self.dalta:
             self.save_checkpoint(valid_loss, model)
             self.best_valid_loss = valid_loss
+            self.counter = 0
 
         else:
             self.counter += 1
