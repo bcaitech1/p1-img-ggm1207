@@ -60,7 +60,7 @@ strat = dict()
 strat["st01"] = {
     "strategy": "st01",
     "do_lower_case": False,
-    "ms_name": "koelec_v3",
+    "ms_name": "koelecv3",
     "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",
     "optimizer": "adamw",
@@ -69,14 +69,14 @@ strat["st01"] = {
     "seed": tune.randint(0, 10000),
     "batch_size": tune.choice([32, 64]),
     "max_seq_length": tune.choice([128, 256]),
-    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
+    "optimizer_hp": {"lr": tune.uniform([3e-5, 1e-4]), "eps": 1e-8},
 }
 
 # koelec_v3, dataset_v1, adam, warm_up
 strat["st02"] = {
     "strategy": "st02",
     "do_lower_case": False,
-    "ms_name": "koelec_v3",
+    "ms_name": "koelecv3",
     "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
     "data_kind": "dataset_v1",
     "optimizer": "adam",
@@ -85,5 +85,5 @@ strat["st02"] = {
     "seed": tune.randint(0, 10000),
     "batch_size": tune.choice([32, 64]),
     "max_seq_length": tune.choice([128, 256]),
-    "optimizer_hp": {"lr": tune.choice([5e-5, 1e-8]), "eps": 1e-8},
+    "optimizer_hp": {"lr": tune.uniform([3e-5, 1e-4]), "eps": 1e-8},
 }
