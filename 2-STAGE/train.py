@@ -7,6 +7,7 @@ import wandb
 from sklearn.metrics import accuracy_score
 
 from config import get_args
+from losses import get_lossfn
 from prepare import load_sample
 from database import execute_query
 from slack import hook_fail_strategy
@@ -161,7 +162,6 @@ def debug(args, strategy):
 
 
 if __name__ == "__main__":
-    from losses import get_lossfn
     from prepare import load_dataloader
     from optimizers import get_optimizer, get_scheduler
 
