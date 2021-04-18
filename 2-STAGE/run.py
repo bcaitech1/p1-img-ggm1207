@@ -22,6 +22,24 @@ from slack import hook_simple_text, hook_fail_ray
 from optimizers import get_optimizer, get_scheduler
 
 
+class CustomStopper(tune.Stopper):
+    def __init__(self, args):
+        if isinstance(args, dict):
+            args = Namespace(**args)
+
+        self.should_stop = False
+        self.args = args
+
+    def __call__(self, trial_id, result):
+        if not self.should_stop and result["valid_acc"] > 0.8:
+            self.should_stop = True
+
+        return self.should_stop or result["training_iteration"] >= self.args.epochs
+
+    def stop_all(self):
+        return self.should_stop
+
+
 @wandb_mixin
 def main(config, checkpoint_dir=None):
     step = 0
@@ -34,8 +52,8 @@ def main(config, checkpoint_dir=None):
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)
 
+    # Tune can automatically and periodically save/checkpoint your model.
     if checkpoint_dir is not None:  # Use For PBT
-        print("I'm in checkpoint_dir!!")
         path = os.path.join(checkpoint_dir, "checkpoint")
         checkpoint = torch.load(path)
 
@@ -62,6 +80,8 @@ def main(config, checkpoint_dir=None):
                 learning_rate=scheduler.get_last_lr()[0],
             )
         )
+
+        step += 1
 
         # 뭔지 모르겠지만 여기서 걍 끝남.
         tune.report(
@@ -98,6 +118,7 @@ def raytune(args):
             continue
 
         scheduler = PopulationBasedTraining(
+            time_attr="training_iteration",
             perturbation_interval=1,
             hyperparam_mutations={  # use when explore
                 "learning_rate": tune.uniform(0.0001, 0.001),
@@ -106,16 +127,19 @@ def raytune(args):
         )
 
         hook_simple_text(f":pray: {args['base_name']} PBT 시작합니다!!")
+        stopper = CustomStopper(args)
 
         tune.run(
             main,
-            name="pbt_bert_test",
-            scheduler=scheduler,
-            stop={"training_iteration": args["epochs"]},
-            metric="valid_loss",
+            name="pbt_test",
             mode="min",
+            verbose=1,
+            stop=stopper,
+            num_samples=4,
+            metric="valid_loss",
+            scheduler=scheduler,
             keep_checkpoints_num=3,
-            num_samples=8,
+            checkpoint_score_attr="valid_loss",  # valid loss 기준으로 저장.
             resources_per_trial={"cpu": 8, "gpu": 1},
             config=args,
         )

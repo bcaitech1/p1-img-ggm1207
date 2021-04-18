@@ -55,7 +55,7 @@ def get_args():
     #  pa("--ms_name", default="bert")
     #  pa("--model_name_or_path", default="bert-base-multilingual-cased")
     pa("--ms_name", default="koelectra")
-    pa("--model_name_or_path", default="monologg/koelectra-small-v3-discriminator")
+    pa("--model_name_or_path", default="monologg/koelectra-base-v3-discriminator")
 
     # loss, optimizer, scheduler
     pa("--loss_name", default="CE")
@@ -77,18 +77,18 @@ def get_args():
     pa("--loss_hp", default={"reduction": "sum"})
     pa("--optimizer_hp", default={"lr": 5e-5, "eps": 1e-8}, type=dict)
 
-    pa(
-        "--scheduler_hp",
-        default={
-            "first_cycle_steps": 8,
-            "cycle_mult": 1.0,
-            "warmup_steps": 2,
-            "gamma": 0.5,
-        },
-        type=dict,
-    )
+    #  pa(
+    #      "--scheduler_hp",
+    #      default={
+    #          "first_cycle_steps": 8,
+    #          "cycle_mult": 1.0,
+    #          "warmup_steps": 2,
+    #          "gamma": 0.5,
+    #      },
+    #      type=dict,
+    #  )
 
-    #  pa("--scheduler_hp", default={"num_warmup_steps": 0}, type=dict)
+    pa("--scheduler_hp", default={"num_warmup_steps": 0}, type=dict)
 
     # parsing
     args, unknown = parser.parse_known_args()
