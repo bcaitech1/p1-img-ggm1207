@@ -154,6 +154,7 @@ def debug(args, strategy):
 
     except Exception:
         err_message = traceback.format_exc()
+        print(err_message)
         query = f"UPDATE STRATEGY SET STATUS = 'PENDING' WHERE strategy='{strategy}'"
         execute_query(query)
         hook_fail_strategy(strategy, err_message)

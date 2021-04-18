@@ -138,4 +138,5 @@ if __name__ == "__main__":
         raytune(args)
     except Exception:
         err_message = traceback.format_exc()
+        print(err_message)
         hook_fail_ray(err_message)

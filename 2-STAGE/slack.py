@@ -41,7 +41,7 @@ def get_format_data(text, image_url):
 
 
 def hook_fail_strategy(strategy, error):
-    text = f"@channel \n{'-'*30}\n*STRATEGY*: {strategy}\n*STATUS*: PENDING\n*ERROR_MESSAGE*: {str(error)[:40]}"
+    text = f"@channel \n{'-'*30}\n*STRATEGY*: {strategy}\n*STATUS*: PENDING\n*ERROR_MESSAGE*: {str(error)[:100]}"
     img_url = random.choice(bad_image_url)
     data = get_format_data(text, img_url)
     res = requests.post(ul, headers=headers, data=json.dumps(data))
@@ -49,7 +49,7 @@ def hook_fail_strategy(strategy, error):
 
 
 def hook_fail_ray(error):
-    text = f"@channel \n{'-'*30}\n*RAY FAILED!!!* Warning!!!\n:warning::warning::warning::warning::warning::warning::warning:\n*ERROR*: {str(error)[:40]}"
+    text = f"@channel \n{'-'*30}\n*RAY FAILED!!!* Warning!!!\n:warning::warning::warning::warning::warning::warning::warning:\n*ERROR*: {str(error)[:100]}"
     img_url = random.choice(bad_image_url)
     data = get_format_data(text, img_url)
     res = requests.post(ul, headers=headers, data=json.dumps(data))
