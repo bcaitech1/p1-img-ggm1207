@@ -109,7 +109,7 @@ def pick_one_dataset(args, is_train=True):
 def load_test_dataloader(args, tokenizer):
     test_dataset = pick_one_dataset(args, is_train=False)
     test_dataset = tokenized_dataset(args, test_dataset, tokenizer)
-    test_dataset = RE_Dataset(test_dataset)
+    test_dataset = RE_Dataset(test_dataset, test_dataset["labels"])
 
     test_dataloader = DataLoader(
         test_dataset, batch_size=32, pin_memory=True, num_workers=1, shuffle=False
@@ -122,7 +122,7 @@ def load_sample(args, tokenizer):
     _, valid_dataset = pick_one_dataset(args, is_train=True)
 
     tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
-    re_tv_dataset = RE_Dataset(tv_dataset)
+    re_tv_dataset = RE_Dataset(tv_dataset, tv_dataset["labels"])
 
     idx = random.randint(0, len(re_tv_dataset))
     batch = re_tv_dataset[idx]
