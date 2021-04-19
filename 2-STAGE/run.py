@@ -31,7 +31,7 @@ class CustomStopper(tune.Stopper):
         self.args = args
 
     def __call__(self, trial_id, result):
-        if not self.should_stop and result["valid_acc"] > 0.8:
+        if not self.should_stop and result["valid_acc"] > 0.85:
             self.should_stop = True
 
         return self.should_stop or result["training_iteration"] >= self.args.epochs
@@ -133,7 +133,6 @@ def raytune(args):
             main,
             name="pbt_test",
             mode="min",
-            verbose=1,
             stop=stopper,
             num_samples=4,
             metric="valid_loss",
