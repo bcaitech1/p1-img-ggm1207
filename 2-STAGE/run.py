@@ -161,6 +161,7 @@ def run_without_raytune():
         args = get_args()  # default
         strategy, status, _, _ = sample_strategy()
         args = update_args(args, strategy, hp_space.strat)  # strategy
+        args = Namespace(**args)
 
         if status == "READY":  # if status == "READY" then Check pipeline
             debug(args, strategy)
