@@ -180,7 +180,7 @@ def run_without_raytune():
         optimizer = get_optimizer(args, model)
         scheduler = get_scheduler(args, optimizer, epoch_len=len(train_dataloader))
 
-        hook_simple_text(f":pray: {args['base_name']} PBT 시작합니다!!")
+        hook_simple_text(f":pray: {args.base_name} PBT 시작합니다!!")
 
         run(
             args,
@@ -193,10 +193,10 @@ def run_without_raytune():
         )
 
         torch.cuda.empty_cache()
-        if_best_score_auto_submit(args["save_path"])
+        if_best_score_auto_submit(args.save_path)
         torch.cuda.empty_cache()
 
-        hook_simple_text(f":joy: {args['base_name']} 학습 끝!!!")
+        hook_simple_text(f":joy: {args.base_name} 학습 끝!!!")
 
 
 if __name__ == "__main__":
