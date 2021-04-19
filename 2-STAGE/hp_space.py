@@ -130,5 +130,5 @@ strat["st05"] = {
     "optimizer": "adamw",
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
     "batch_size": 64,
-    "max_seq_length": 128,
+    "max_seq_length": 256,
 }
