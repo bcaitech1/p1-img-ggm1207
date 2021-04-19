@@ -15,11 +15,11 @@ from losses import get_lossfn
 from prepare import load_dataloader
 from database import sample_strategy
 from train import train, evaluate, debug
-from utils import update_args, EarlyStopping
 from networks import load_model_and_tokenizer
 from inference import if_best_score_auto_submit
 from slack import hook_simple_text, hook_fail_ray
 from optimizers import get_optimizer, get_scheduler
+from utils import update_args, EarlyStopping, set_seed
 
 
 class CustomStopper(tune.Stopper):
@@ -44,6 +44,8 @@ class CustomStopper(tune.Stopper):
 def main(config, checkpoint_dir=None):
     step = 0
     args = Namespace(**config)
+
+    set_seed(args.seed)
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
