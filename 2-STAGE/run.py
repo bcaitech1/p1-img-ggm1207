@@ -14,7 +14,7 @@ from config import get_args
 from losses import get_lossfn
 from prepare import load_dataloader
 from database import sample_strategy
-from train import train, evaluate, debug
+from train import train, evaluate, debug, run
 from networks import load_model_and_tokenizer
 from inference import if_best_score_auto_submit
 from slack import hook_simple_text, hook_fail_ray
@@ -102,7 +102,7 @@ def main(config, checkpoint_dir=None):
             )
 
 
-def raytune(args):
+def run_with_raytune(args):
     """ 하이퍼파라미터 설정하는 곳 """
     if isinstance(args, Namespace):
         args = vars(args)  # Namespace to dict
@@ -154,11 +154,55 @@ def raytune(args):
         torch.cuda.empty_cache()
 
 
+def run_without_raytune():
+    while True:
+        reload(hp_space)
+
+        args = get_args()  # default
+        strategy, status, _, _ = sample_strategy()
+        args = update_args(args, strategy, hp_space.strat)  # strategy
+
+        if status == "READY":  # if status == "READY" then Check pipeline
+            debug(args, strategy)
+            torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
+            continue
+
+        wandb.init(project="p-stage-2", reinit=True)
+        model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
+
+        wandb.watch(model)
+        wandb.config.update(args)
+
+        train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
+
+        loss_fn = get_lossfn(args)
+        optimizer = get_optimizer(args, model)
+        scheduler = get_scheduler(args, optimizer, epoch_len=len(train_dataloader))
+
+        hook_simple_text(f":pray: {args['base_name']} PBT 시작합니다!!")
+
+        run(
+            args,
+            model,
+            loss_fn,
+            optimizer,
+            scheduler,
+            train_dataloader,
+            valid_dataloader,
+        )
+
+        torch.cuda.empty_cache()
+        if_best_score_auto_submit(args["save_path"])
+        torch.cuda.empty_cache()
+
+        hook_simple_text(f":joy: {args['base_name']} 학습 끝!!!")
+
+
 if __name__ == "__main__":
     args = get_args()
 
     try:
-        raytune(args)
+        run_without_raytune()
     except Exception:
         err_message = traceback.format_exc()
         print(err_message)

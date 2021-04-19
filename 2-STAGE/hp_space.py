@@ -85,3 +85,50 @@ strat["st02"] = {
     "max_seq_length": tune.choice([128, 256]),
     "optimizer_hp": {"lr": tune.uniform(3e-5, 1e-4), "eps": 1e-8},
 }
+
+# No Use Ray, Baseline
+strat["st03"] = {
+    "strategy": "st03",
+    "ms_name": "koelecv3",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
+    "data_kind": "dataset_v1",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 64,
+    "max_seq_length": 256,
+    "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
+}
+
+# Change Max Seq Length 256 to 128
+strat["st04"] = {
+    "strategy": "st04",
+    "ms_name": "koelecv3",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
+    "data_kind": "dataset_v1",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 64,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
+}
+
+# Use Cyclic SGDR Scheduling
+strat["st05"] = {
+    "strategy": "st05",
+    "ms_name": "koelecv3",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
+    "data_kind": "dataset_v1",
+    "scheduler": "sgdr",
+    "scheduler_hp": {
+        "first_cycle_steps": 8,
+        "cycle_mult": 1.0,
+        "warmup_steps": 500,
+        "gamma": 0.5,
+    },
+    "optimizer": "adamw",
+    "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
+    "batch_size": 64,
+    "max_seq_length": 128,
+}

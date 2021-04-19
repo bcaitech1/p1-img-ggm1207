@@ -129,7 +129,7 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
 
 OPTIMIZERS = {"sgd": optim.SGD, "adam": optim.Adam, "adamw": optim.AdamW}
 
-SCHEDULER = {
+SCHEDULERS = {
     "cyclic_lr": optim.lr_scheduler.CyclicLR,
     "cosine_lr": optim.lr_scheduler.CosineAnnealingLR,
     "cosine_warm_lr": optim.lr_scheduler.CosineAnnealingWarmRestarts,
@@ -168,18 +168,11 @@ def get_optimizer(args, model):
     return OPTIMIZERS[args.optimizer](optimizer_grouped_parameters, **args.optimizer_hp)
 
 
-def get_scheduler(args, optimizer):
-    if args.scheduler not in SCHEDULER.keys():
+def get_scheduler(args, optimizer, epoch_len=119):
+    if args.scheduler not in SCHEDULERS.keys():
         raise KeyError(f"{args.scheduler} not in SCHEDULER")
 
     if args.scheduler == "warm_up":
-        args.scheduler_hp["num_training_steps"] = 119 * args.epochs
+        args.scheduler_hp["num_training_steps"] = epoch_len * args.epochs
 
-    return SCHEDULER[args.scheduler](optimizer, **args.scheduler_hp)
-
-
-#  def get_sampler(args):
-#      if args.sampler not in SAMPLER.keys():
-#          raise KeyError(f"{args.sampler} not in SAMPLER")
-#
-#      return SAMPLER[args.sampler]
+    return SCHEDULERS[args.scheduler](optimizer, **args.scheduler_hp)

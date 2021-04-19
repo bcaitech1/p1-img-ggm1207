@@ -51,16 +51,12 @@ def get_args():
     pa("--patience", default=5, type=int)
 
     # train hypterparameters: Uses when training
-
-    #  pa("--ms_name", default="bert")
-    #  pa("--model_name_or_path", default="bert-base-multilingual-cased")
     pa("--ms_name", default="koelectra")
     pa("--model_name_or_path", default="monologg/koelectra-base-v3-discriminator")
 
     # loss, optimizer, scheduler
     pa("--loss_name", default="CE")
     pa("--optimizer", default="adamw")
-    #  pa("--scheduler", default="sgdr")
     pa("--scheduler", default="warm_up")
 
     pa("--epochs", default=15, type=int)
@@ -68,7 +64,6 @@ def get_args():
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)
     pa("--clip", default=1.0, type=float)
-    #  pa("--learning_rate", default=5e-5, type=float)
     pa("--max_seq_length", default=128, type=int)
 
     # batch sizes: 8, 16, 32, 64, 128
