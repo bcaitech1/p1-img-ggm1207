@@ -149,7 +149,7 @@ def run_with_raytune(args):
 
         hook_simple_text(f":joy: {args['base_name']} 학습 끝!!!")
 
-        if_best_score_auto_submit(args["save_path"])
+        if_best_score_auto_submit(args, args["save_path"])
 
         torch.cuda.empty_cache()
 
@@ -168,7 +168,9 @@ def run_without_raytune():
             torch.cuda.empty_cache()  # Debug 이후에 할당된 메모리 해제
             continue
 
+        print("args:", args)
         wandb.init(project="p-stage-2", reinit=True)
+        wandb.run.name = args.base_name
         model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
 
         wandb.watch(model)
@@ -193,7 +195,7 @@ def run_without_raytune():
         )
 
         torch.cuda.empty_cache()
-        if_best_score_auto_submit(args.save_path)
+        if_best_score_auto_submit(args, args.save_path)
         torch.cuda.empty_cache()
 
         hook_simple_text(f":joy: {args.base_name} 학습 끝!!!")
