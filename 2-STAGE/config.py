@@ -63,7 +63,7 @@ def get_args():
     #  pa("--scheduler", default="sgdr")
     pa("--scheduler", default="warm_up")
 
-    pa("--epochs", default=20, type=int)
+    pa("--epochs", default=15, type=int)
     pa("--batch_size", default=64, type=int)
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)

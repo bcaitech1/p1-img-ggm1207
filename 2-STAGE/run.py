@@ -123,7 +123,7 @@ def raytune(args):
             time_attr="training_iteration",
             perturbation_interval=1,
             hyperparam_mutations={  # use when explore
-                "learning_rate": tune.uniform(0.0001, 0.001),
+                "optimizer_hp": {"lr": tune.uniform(0.0001, 0.0005)},
                 "weight_decay": tune.uniform(0.001, 0.02),
             },
         )
