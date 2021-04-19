@@ -195,12 +195,16 @@ def tokenized_dataset(args, dataset, tokenizer):
 
 if __name__ == "__main__":
     from config import get_args
+    from networks import load_model_and_tokenizer
 
     args = get_args()
+    model, tokenizer = load_model_and_tokenizer(args)
     dataset, valid_dataset = pick_one_dataset(args, is_train=True)
 
-    for idx, (e01, e02, words, label) in enumerate(
-        zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
-    ):
-        print(e01, e02, words, label)
-        break
+    tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
+
+    #  for idx, (e01, e02, words, label) in enumerate(
+    #      zip(dataset["e1"], dataset["e2"], dataset["words"], dataset["labels"])
+    #  ):
+    #      print(e01, e02, words, label)
+    #      break

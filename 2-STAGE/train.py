@@ -143,6 +143,7 @@ def debug(args, strategy):
         args = Namespace(**args)
 
     args.batch_size = 32
+    args.max_seq_length = 128
 
     try:
         model, tokenizer = load_model_and_tokenizer(args)
