@@ -67,7 +67,7 @@ def submission_inference(args, model, tokenizer, save_path):
     base_name = os.path.basename(save_path)[:-4]
     save_path = os.path.join(args.submit_dir, base_name) + ".csv"
 
-    results = model.evaluate(args, test_dataloader, return_keys=["preds"])
+    results = model.evaluate(test_dataloader, return_keys=["preds"])
 
     preds = np.array(results["preds"]).reshape(-1)
     output = pd.DataFrame(preds, columns=["pred"])
