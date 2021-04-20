@@ -8,11 +8,12 @@ from sklearn.metrics import accuracy_score
 
 from config import get_args
 from losses import get_lossfn
-from prepare import load_sample
+from prepare import load_sample, load_dataloader
 from database import execute_query
 from slack import hook_fail_strategy
 from networks import load_model_and_tokenizer
 from utils import EarlyStopping, get_auto_save_path
+from optimizers import get_optimizer, get_scheduler
 
 
 def epoch_time(start_time, end_time):
@@ -167,8 +168,6 @@ def debug(args, strategy):
 
 
 if __name__ == "__main__":
-    from prepare import load_dataloader
-    from optimizers import get_optimizer, get_scheduler
 
     wandb.init(project="p-stage-2")
 
