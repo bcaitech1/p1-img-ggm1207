@@ -71,14 +71,6 @@ def hook_simple_text(text):
     print(res)
 
 
-#  def hook_error_message(strategy):
-#      text = ":spinthinking: Hmm... 뭐가 문제일까요?"
-#      image_url = random.choice(good_image_url)
-#
-#      for image_url in good_image_url + bad_image_url:
-#          data = get_format_data(text, image_url)
-#          res = requests.post(ul, headers=headers, data=json.dumps(data))
-
 if __name__ == "__main__":
 
     hook_simple_text("많이 놀랐죠?")

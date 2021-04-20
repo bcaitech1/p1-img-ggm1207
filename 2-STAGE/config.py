@@ -1,3 +1,4 @@
+import os
 import argparse
 from functools import partial
 
@@ -20,24 +21,26 @@ def get_args():
     pa = partial(parser.add_argument)
 
     # pathes
-    pa(
-        "--weight_dir",
-        default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights",
-    )
-    pa("--data_dir", default="/home/j-gunmo/storage/data/input/data/")
-    pa("--data_kind", default="dataset_v1")
-    pa("--strategy", default="st01")
-    pa(
-        "--submit_dir",
-        default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/submits",
-    )
 
-    #  # server pathes
-    #  pa("--weight_dir", default="/opt/ml/P-Stage/2-STAGE/weights")
-    #  pa("--data_dir", default="/opt/ml/input/data")
-    #  pa("--data_kind", default="dataset_v1")
-    #  pa("--strategy", default="st01")
-    #  pa("--submit_dir", default="/opt/ml/P-Stage/2-STAGE/submits")
+    if os.path.abspath(".").split("/")[1] == "opt":
+        # server pathes
+        pa("--weight_dir", default="/opt/ml/P-Stage/2-STAGE/weights")
+        pa("--data_dir", default="/opt/ml/input/data")
+        pa("--data_kind", default="dataset_v1")
+        pa("--strategy", default="st01")
+        pa("--submit_dir", default="/opt/ml/P-Stage/2-STAGE/submits")
+    else:
+        pa(
+            "--weight_dir",
+            default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights",
+        )
+        pa("--data_dir", default="/home/j-gunmo/storage/data/input/data/")
+        pa("--data_kind", default="dataset_v1")
+        pa("--strategy", default="st00")
+        pa(
+            "--submit_dir",
+            default="/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/submits",
+        )
 
     # ops hypterparameter: Uses when (not training)
 
@@ -59,7 +62,7 @@ def get_args():
     pa("--optimizer", default="adamw")
     pa("--scheduler", default="warm_up")
 
-    pa("--epochs", default=30, type=int)
+    pa("--epochs", default=50, type=int)
     pa("--batch_size", default=64, type=int)
     pa("--warmup_steps", default=500, type=int)
     pa("--weight_decay", default=0.01, type=float)

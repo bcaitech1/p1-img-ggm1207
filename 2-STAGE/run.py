@@ -11,14 +11,12 @@ from ray.tune.integration.wandb import wandb_mixin
 
 import hp_space
 from config import get_args
-from losses import get_lossfn
+from train import debug, run
 from prepare import load_dataloader
 from database import sample_strategy
-from train import train, evaluate, debug, run
 from networks import load_model_and_tokenizer
 from inference import if_best_score_auto_submit
 from slack import hook_simple_text, hook_fail_ray
-from optimizers import get_optimizer, get_scheduler
 from utils import update_args, EarlyStopping, set_seed
 
 
@@ -50,26 +48,20 @@ def main(config, checkpoint_dir=None):
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
 
-    loss_fn = get_lossfn(args)
-    optimizer = get_optimizer(args, model)
-    scheduler = get_scheduler(args, optimizer)
-
     # Tune can automatically and periodically save/checkpoint your model.
     if checkpoint_dir is not None:  # Use For PBT
         path = os.path.join(checkpoint_dir, "checkpoint")
         checkpoint = torch.load(path)
 
         model.load_state_dict(checkpoint["model"])
-        optimizer.load_state_dict(checkpoint["optim"])
+        model.optimizer.load_state_dict(checkpoint["optim"])
         step = checkpoint["step"]
 
     es_helper = EarlyStopping(args, verbose=True)  # Use For Ensemble
 
     while True:
-        train_loss = train(args, model, loss_fn, optimizer, scheduler, train_dataloader)
-        results = evaluate(
-            args, model, loss_fn, valid_dataloader, return_keys=["loss", "acc"]
-        )
+        train_loss = model.train(train_dataloader)
+        results = model.evaluate(valid_dataloader)
 
         es_helper(train_loss, results["loss"], results["acc"], model)
 
@@ -79,7 +71,7 @@ def main(config, checkpoint_dir=None):
                 valid_loss=results["loss"],
                 valid_acc=results["acc"],
                 train_loss=train_loss,
-                learning_rate=scheduler.get_last_lr()[0],
+                learning_rate=model.scheduler.get_last_lr()[0],
             )
         )
 
@@ -95,7 +87,7 @@ def main(config, checkpoint_dir=None):
             torch.save(
                 {
                     "model": model.state_dict(),
-                    "optim": optimizer.state_dict(),
+                    "optim": model.optimizer.state_dict(),
                     "step": step,
                 },
                 path,
@@ -169,6 +161,7 @@ def run_without_raytune():
             continue
 
         print("args:", args)
+
         wandb.init(project="p-stage-2", reinit=True)
         wandb.run.name = args.base_name
         model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
@@ -178,32 +171,18 @@ def run_without_raytune():
 
         train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
 
-        loss_fn = get_lossfn(args)
-        optimizer = get_optimizer(args, model)
-        scheduler = get_scheduler(args, optimizer, epoch_len=len(train_dataloader))
-
         hook_simple_text(f":pray: {args.base_name} PBT 시작합니다!!")
 
-        run(
-            args,
-            model,
-            loss_fn,
-            optimizer,
-            scheduler,
-            train_dataloader,
-            valid_dataloader,
-        )
+        run(args, model, train_dataloader, valid_dataloader)
 
         torch.cuda.empty_cache()
         if_best_score_auto_submit(args, args.save_path)
-        torch.cuda.empty_cache()
 
+        torch.cuda.empty_cache()
         hook_simple_text(f":joy: {args.base_name} 학습 끝!!!")
 
 
 if __name__ == "__main__":
-    args = get_args()
-
     try:
         run_without_raytune()
     except Exception:

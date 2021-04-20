@@ -7,8 +7,6 @@ import torch
 import numpy as np
 import pandas as pd
 
-from train import evaluate
-from losses import get_lossfn
 from networks import load_model_and_tokenizer
 from prepare import load_dataloader, load_test_dataloader
 from database import update_strategy_statistics, insert_model_scores
@@ -45,10 +43,10 @@ def if_best_score_auto_submit(args, save_path):
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     _, valid_dataloader = load_dataloader(args, tokenizer)
-    model.load_state_dict(torch.load(save_path))
-    loss_fn = get_lossfn(args)
 
-    results = evaluate(args, model, loss_fn, valid_dataloader, return_keys=["acc"])
+    model.load_state_dict(torch.load(save_path))
+
+    results = model.evaluate(valid_dataloader, return_keys=["acc"])
 
     s_cnt = re.findall(r"[\d]{3}", save_path)[-1]
 
@@ -64,13 +62,12 @@ def submission_inference(args, model, tokenizer, save_path):
     model.to(args.device)
     torch.cuda.empty_cache()
 
-    loss_fn = get_lossfn(args)
     test_dataloader = load_test_dataloader(args, tokenizer)
 
     base_name = os.path.basename(save_path)[:-4]
     save_path = os.path.join(args.submit_dir, base_name) + ".csv"
 
-    results = evaluate(args, model, loss_fn, test_dataloader, return_keys=["preds"])
+    results = model.evaluate(args, test_dataloader, return_keys=["preds"])
 
     preds = np.array(results["preds"]).reshape(-1)
     output = pd.DataFrame(preds, columns=["pred"])
@@ -81,12 +78,16 @@ def submission_inference(args, model, tokenizer, save_path):
 
 
 if __name__ == "__main__":
+    import hp_space
     from config import get_args
+    from utils import update_args
+    from argparse import Namespace
 
     args = get_args()
+    args = update_args(args, args.strategy, hp_space.strat)
+    args = Namespace(**args)
+
     if_best_score_auto_submit(
         args,
-        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st01_kobert_000.pth",
+        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st00_testmodel_000.pth",
     )
-
-    #  auto_submit(user_key, "description_test", "./submission.csv")

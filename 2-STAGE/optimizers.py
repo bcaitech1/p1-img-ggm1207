@@ -1,5 +1,7 @@
 import math
 
+from adamp import AdamP
+from madgrad import MADGRAD
 import torch.optim as optim
 from torch.utils.data import RandomSampler
 from torch.optim.lr_scheduler import _LRScheduler
@@ -127,7 +129,13 @@ class CosineAnnealingWarmupRestarts(_LRScheduler):
             param_group["lr"] = lr
 
 
-OPTIMIZERS = {"sgd": optim.SGD, "adam": optim.Adam, "adamw": optim.AdamW}
+OPTIMIZERS = {
+    "sgd": optim.SGD,
+    "adam": optim.Adam,
+    "adamw": optim.AdamW,
+    "adamp": AdamP,  # 기본값을 사용하는 것이 좋다고 한다.
+    "madgrad": MADGRAD,  # lr 0.005, cliping 도움이 됐다.
+}
 
 SCHEDULERS = {
     "cyclic_lr": optim.lr_scheduler.CyclicLR,

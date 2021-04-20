@@ -13,11 +13,12 @@ def set_seed(SEED):
     torch.cuda.manual_seed(SEED)
     torch.cuda.manual_seed_all(SEED)  # if use multi-GPU
 
+    np.random.seed(SEED)
+    random.seed(SEED)
+
     # 연산 처리 속도가 감소된다고 한다.
     #  torch.backends.cudnn.deterministic = True
     #  torch.backends.cudnn.benchmark = False
-    np.random.seed(SEED)
-    random.seed(SEED)
 
 
 def custom_model_save(model, save_path):
