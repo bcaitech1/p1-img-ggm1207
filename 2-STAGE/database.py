@@ -21,7 +21,21 @@ def execute_query(query):
 def get_scores_of_strategy(strategy):
     """ 전략이 들어갔다면 무조건 Default 값이라도 뽑아낸다. """
     conn = db_connect()
-    query = f"SELECT cnt, v_max_score, v_avg_score FROM STRATEGY"
+    query = f"SELECT cnt, v_max_score, v_avg_score FROM STRATEGY WHERE strategy='{strategy}'"
+
+    cur = conn.cursor()
+    cur.execute(query)
+
+    rows = cur.fetchone()  # fetchone, fetchmany
+    conn.close()
+
+    return rows
+
+
+def get_scores():
+    """ 전략이 들어갔다면 무조건 Default 값이라도 뽑아낸다. """
+    conn = db_connect()
+    query = "SELECT cnt, v_max_score, v_avg_score FROM STRATEGY"
 
     cur = conn.cursor()
     cur.execute(query)
@@ -43,18 +57,22 @@ def update_strategy_statistics(args, valid_acc):
     flag = False
     prev_cnt, prev_max_score, prev_avg_score = get_scores_of_strategy(args.strategy)
 
+    if valid_acc > prev_max_score:
+        prev_max_score = valid_acc
+
     new_avg_score = prev_avg_score * prev_cnt + valid_acc
     new_avg_score /= prev_cnt + 1
-
-    if valid_acc > prev_max_score:
-        flag = True
-        prev_max_score = valid_acc
 
     query = f"UPDATE STRATEGY SET v_max_score={prev_max_score}, v_avg_score={new_avg_score} WHERE strategy='{args.strategy}'"
     execute_query(query)
 
     query = f"UPDATE STRATEGY SET cnt = {prev_cnt+1} WHERE strategy = '{args.strategy}'"
     execute_query(query)
+
+    prev_cnt, all_max_score, prev_avg_score = get_scores()
+
+    if valid_acc > all_max_score:
+        flag = True
 
     return flag
 
