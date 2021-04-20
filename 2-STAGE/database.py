@@ -21,7 +21,7 @@ def execute_query(query):
 def get_scores_of_strategy(strategy):
     """ 전략이 들어갔다면 무조건 Default 값이라도 뽑아낸다. """
     conn = db_connect()
-    query = f"SELECT cnt, v_max_score, v_avg_score FROM STRATEGY WHERE strategy='{strategy}'"
+    query = f"SELECT cnt, v_max_score, v_avg_score FROM STRATEGY"
 
     cur = conn.cursor()
     cur.execute(query)
