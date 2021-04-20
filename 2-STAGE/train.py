@@ -148,6 +148,8 @@ def debug(args, strategy):
     try:
         model, tokenizer = load_model_and_tokenizer(args)
         loss_fn = get_lossfn(args)
+        optimizer = get_optimizer(args, model)
+        _ = get_scheduler(args, optimizer)
 
         inputs, labels = load_sample(args, tokenizer)
         preds = model(**inputs, return_dict=True)
