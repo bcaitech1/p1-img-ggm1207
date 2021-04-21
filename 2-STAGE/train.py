@@ -9,6 +9,7 @@ from config import get_args
 from database import execute_query
 from slack import hook_fail_strategy
 from networks import load_model_and_tokenizer
+from inference import if_best_score_auto_submit
 from prepare import load_sample, load_dataloader
 from utils import EarlyStopping, get_auto_save_path, update_args
 
@@ -53,6 +54,8 @@ def run(args, model, train_dataloader, valid_dataloader):
         )
 
         print()
+
+    if_best_score_auto_submit(args, args.save_path)
 
 
 def debug(args, strategy):
