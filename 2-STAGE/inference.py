@@ -67,14 +67,16 @@ def submission_inference(args, model, tokenizer, save_path):
     base_name = os.path.basename(save_path)[:-4]
     save_path = os.path.join(args.submit_dir, base_name) + ".csv"
 
-    results = model.evaluate(test_dataloader, return_keys=["preds"])
+    results = model.evaluate(test_dataloader, return_keys=["preds", "logits"])
 
-    preds = np.array(results["preds"]).reshape(-1)
-    output = pd.DataFrame(preds, columns=["pred"])
-    output.to_csv(save_path, index=False)
+    print(results)
+
+    #  preds = np.array(results["preds"]).reshape(-1)
+    #  output = pd.DataFrame(preds, columns=["pred"])
+    #  output.to_csv(save_path, index=False)
 
     user_key = "Bearer 5c12695179ea1f0a97aec9ce2be8da028755f095"
-    auto_submit(user_key, base_name, save_path)
+    #  auto_submit(user_key, base_name, save_path)
 
 
 if __name__ == "__main__":
@@ -87,7 +89,19 @@ if __name__ == "__main__":
     args = update_args(args, args.strategy, hp_space.strat)
     args = Namespace(**args)
 
-    if_best_score_auto_submit(
-        args,
-        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st00_testmodel_000.pth",
+    save_path = (
+        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st00_testmodel_001.pth",
     )
+
+    print(args)
+
+    #  if_best_score_auto_submit(
+    #      args,
+    #      save_path
+    #  )
+
+    model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
+    test_dataloader = load_test_dataloader(args, tokenizer)
+
+    results = model.evaluate(test_dataloader, return_keys=["acc", "logits"])
+    print(results)

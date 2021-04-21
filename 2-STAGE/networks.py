@@ -66,6 +66,7 @@ class BertBase(nn.Module):
         epoch_loss = 0.0
 
         results = dict()
+        all_logits = torch.tensor([]).to(self.args.device)
         all_labels, all_preds = [], []
 
         with torch.no_grad():
@@ -77,8 +78,10 @@ class BertBase(nn.Module):
                     loss = self.loss_fn(preds.logits, labels)
                     epoch_loss += loss.item()
 
+                all_logits = torch.cat((all_logits, preds.logits.detach()))
                 all_labels.extend(labels.detach().cpu().tolist())
-                all_preds.extend(preds.logits.detach().argmax(-1).cpu().tolist())
+
+        all_preds = all_logits.detach().argmax(-1).cpu().tolist()
 
         assert len(all_labels) == len(all_preds)
 
@@ -90,6 +93,9 @@ class BertBase(nn.Module):
 
         if "preds" in return_keys:
             results["preds"] = all_preds
+
+        if "logits" in return_keys:
+            results["logits"] = all_logits.detach().cpu().numpy()
 
         return results
 
