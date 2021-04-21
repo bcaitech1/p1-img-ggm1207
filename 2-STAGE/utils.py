@@ -36,8 +36,6 @@ def get_auto_save_path(args):
     save_path = f"{prefix}_{s_cnt:03}.pth"
     base_name = os.path.basename(save_path)[:-4]
 
-    assert not p.exists(save_path), f"{save_path} already exists"
-
     return save_path, base_name
 
 
