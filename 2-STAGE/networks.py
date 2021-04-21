@@ -19,8 +19,11 @@ class BertBase(nn.Module):
         inputs = {
             "input_ids": batch["input_ids"].to(self.args.device),
             "attention_mask": batch["attention_mask"].to(self.args.device),
-            "token_type_ids": batch["token_type_ids"].to(self.args.device),
         }
+
+        if self.args.ms_name not in ["distilkobert", "xlmroberta"]:
+            inputs["token_type_ids"] = batch["token_type_ids"].to(self.args.device)
+
         return inputs
 
     def set_optimizer(self, optimizer):

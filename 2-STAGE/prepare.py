@@ -132,8 +132,10 @@ def load_sample(args, tokenizer, is_train=True):
     inputs = {
         "input_ids": batch["input_ids"].to(args.device).unsqueeze(0),
         "attention_mask": batch["attention_mask"].to(args.device).unsqueeze(0),
-        "token_type_ids": batch["token_type_ids"].to(args.device).unsqueeze(0),
     }
+
+    if args.ms_name not in ["distilkobert", "xlmroberta"]:
+        inputs["token_type_ids"] = batch["token_type_ids"].to(args.device).unsqueeze(0)
 
     labels = batch["labels"].to(args.device).unsqueeze(0)
 
