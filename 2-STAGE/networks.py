@@ -105,8 +105,8 @@ def load_model_and_tokenizer(args):
 
     loss_fn = get_lossfn(args)
 
-    if args.model_name_or_path.startswith("monologg"):
-        model = KoELectraClassifier(args, loss_fn)
+    # 에라 모르겠다.
+    model = KoELectraClassifier(args, loss_fn)
 
     optimizer = get_optimizer(args, model)
     scheduler = get_scheduler(args, optimizer)
