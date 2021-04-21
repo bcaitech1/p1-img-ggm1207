@@ -56,6 +56,7 @@ def get_args():
     # train hypterparameters: Uses when training
     pa("--ms_name", default="koelectra")
     pa("--model_name_or_path", default="monologg/koelectra-base-v3-discriminator")
+    pa("--use_sampler", default=True, type=str2bool)
 
     # loss, optimizer, scheduler
     pa("--loss_name", default="CE")

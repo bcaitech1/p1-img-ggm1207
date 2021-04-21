@@ -1,5 +1,4 @@
 import pickle
-import random
 import os.path as p
 from typing import Callable
 
@@ -118,14 +117,17 @@ def load_test_dataloader(args, tokenizer):
     return test_dataloader
 
 
-def load_sample(args, tokenizer):
-    _, valid_dataset = pick_one_dataset(args, is_train=True)
+def load_sample(args, tokenizer, is_train=True):
 
-    tv_dataset = tokenized_dataset(args, valid_dataset, tokenizer)
-    re_tv_dataset = RE_Dataset(tv_dataset, valid_dataset["labels"])
+    if is_train:
+        _, dataset = pick_one_dataset(args, is_train=is_train)
+    else:
+        dataset = pick_one_dataset(args, is_train=is_train)
 
-    idx = random.randint(0, len(re_tv_dataset))
-    batch = re_tv_dataset[idx]
+    tv_dataset = tokenized_dataset(args, dataset, tokenizer)
+    re_tv_dataset = RE_Dataset(tv_dataset, dataset["labels"])
+
+    batch = re_tv_dataset[0]
 
     inputs = {
         "input_ids": batch["input_ids"].to(args.device).unsqueeze(0),
@@ -150,17 +152,27 @@ def load_dataloader(args, tokenizer):
     def callback_get_label(dataset, idx):
         return dataset._get_label(idx)
 
-    train_dataloader = DataLoader(
-        re_tt_dataset,
-        batch_size=args.batch_size,
-        #  shuffle=True,
-        pin_memory=True,  # Load Faster, If Use GPU
-        num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
-        sampler=ImbalancedDatasetSampler(
-            re_tt_dataset, callback_get_label=callback_get_label
-        ),
-        drop_last=True,
-    )
+    if args.use_sampler is True:
+        train_dataloader = DataLoader(
+            re_tt_dataset,
+            batch_size=args.batch_size,
+            #  shuffle=True,
+            pin_memory=True,  # Load Faster, If Use GPU
+            num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
+            sampler=ImbalancedDatasetSampler(
+                re_tt_dataset, callback_get_label=callback_get_label
+            ),
+            drop_last=True,
+        )
+    else:
+        train_dataloader = DataLoader(
+            re_tt_dataset,
+            batch_size=args.batch_size,
+            shuffle=True,
+            pin_memory=True,  # Load Faster, If Use GPU
+            num_workers=1,  # 이미 Memory에 다 올렸는데, 굳이 개수가 많을 필요가 있을까?
+            drop_last=True,
+        )
 
     valid_dataloader = DataLoader(
         re_tv_dataset,

@@ -47,6 +47,7 @@ def main(config, checkpoint_dir=None):
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
+    es_helper = EarlyStopping(args, verbose=True)  # Use For Ensemble
 
     # Tune can automatically and periodically save/checkpoint your model.
     if checkpoint_dir is not None:  # Use For PBT
@@ -56,8 +57,6 @@ def main(config, checkpoint_dir=None):
         model.load_state_dict(checkpoint["model"])
         model.optimizer.load_state_dict(checkpoint["optim"])
         step = checkpoint["step"]
-
-    es_helper = EarlyStopping(args, verbose=True)  # Use For Ensemble
 
     while True:
         train_loss = model.train(train_dataloader)

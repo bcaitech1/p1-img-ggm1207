@@ -7,12 +7,12 @@ strat = dict()
 strat["st00"] = {
     "strategy": "st00",
     "ms_name": "testmodel",
-    "model_name_or_path": "monologg/koelectra-small-v3-discriminator",
+    "model_name_or_path": "monologg/koelectra-base-v3-discriminator",
     "data_kind": "dataset_v1",
     "optimizer": "adamw",
     "scheduler": "warm_up",
     "scheduler_hp": {"num_warmup_steps": 500},
-    "batch_size": 64,
+    "batch_size": 8,
     "max_seq_length": 128,
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
@@ -40,6 +40,7 @@ strat["st01"] = {
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
 
+
 strat["st02"] = {
     "strategy": "st02",
     "ms_name": "koelecv3",
@@ -52,6 +53,7 @@ strat["st02"] = {
     "max_seq_length": 128,
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
+
 
 strat["st03"] = {
     "strategy": "st03",
@@ -66,6 +68,7 @@ strat["st03"] = {
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
 
+
 strat["st04"] = {
     "strategy": "st04",
     "ms_name": "koelecv3",
@@ -79,6 +82,7 @@ strat["st04"] = {
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
 
+
 strat["st05"] = {
     "strategy": "st05",
     "ms_name": "koelecv3",
@@ -91,6 +95,7 @@ strat["st05"] = {
     "max_seq_length": 128,
     "optimizer_hp": {"lr": 5e-5, "eps": 1e-8},
 }
+
 
 """
 >>> TODO: Optimizer, Scheduler 비교
@@ -112,6 +117,7 @@ st12 : dataset_v1, MadGrad, cyclic
 MadGrad 성능 한번 테스트 해보기
 """
 
+
 strat["st06"] = {
     "strategy": "st06",
     "ms_name": "koelecv3",
@@ -124,6 +130,7 @@ strat["st06"] = {
     "batch_size": 64,
     "max_seq_length": 128,
 }
+
 
 strat["st07"] = {
     "strategy": "st07",
@@ -159,6 +166,7 @@ strat["st08"] = {
     "max_seq_length": 128,
 }
 
+
 strat["st09"] = {
     "strategy": "st09",
     "ms_name": "koelecv3",
@@ -171,6 +179,7 @@ strat["st09"] = {
     "batch_size": 64,
     "max_seq_length": 128,
 }
+
 
 strat["st10"] = {
     "strategy": "st10",
@@ -206,6 +215,7 @@ strat["st11"] = {
     "max_seq_length": 128,
 }
 
+
 strat["st12"] = {
     "strategy": "st12",
     "ms_name": "koelecv3",
@@ -226,17 +236,106 @@ strat["st12"] = {
     "max_seq_length": 256,
 }
 
-"""
->>> TODO: Data 증강 기법 사용
-
-st13: BackTranslation, dataset_vn + dataset_v6
->>> pororo 데이터 사용
-
-st14: Transformer (http://dsba.korea.ac.kr/seminar/?mod=document&uid=1328)
->>> 논문 구현해야 함, 어려우면 하지 말자
-"""
-
 
 """
->>> TODO: 효과가 좋았던 기법들을 사용하여 모델 사이즈 증가하기, sampler Toggle
+>>> TODO: 효과가 좋았던 기법들을 사용하여 모델 사이즈 증가하기, sampler 사용/미사용 둘 다.
+>>> dataset_v4, adamw, warm_up, 128
+
+st13: xlm-roberta, use sampler
+st14: xlm-roberta, not use sampler
+
+st15: kobert, use sampler
+st16: kobert, not use sampler
+
+st17: distilkobert, use sampler
+st18: distilkobert, not use sampler
+
+st19: rbert, use sampler
+st20: rbert, not use sampler
+
 """
+
+strat["st13"] = {
+    "strategy": "st13",
+    "ms_name": "xlmroberta",
+    "model_name_or_path": "xlm-roberta-large",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": True,
+}
+
+strat["st14"] = {
+    "strategy": "st14",
+    "ms_name": "xlmroberta",
+    "model_name_or_path": "xlm-roberta-large",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": False,
+}
+
+
+strat["st15"] = {
+    "strategy": "st15",
+    "ms_name": "kobert",
+    "model_name_or_path": "monologg/kobert",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": True,
+}
+
+strat["st16"] = {
+    "strategy": "st16",
+    "ms_name": "kobert",
+    "model_name_or_path": "monologg/kobert",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": False,
+}
+
+strat["st17"] = {
+    "strategy": "st17",
+    "ms_name": "distilkobert",
+    "model_name_or_path": "monologg/distilkobert",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": True,
+}
+
+strat["st18"] = {
+    "strategy": "st18",
+    "ms_name": "distilkobert",
+    "model_name_or_path": "monologg/distilkobert",
+    "data_kind": "dataset_v4",
+    "optimizer": "adamw",
+    "scheduler": "warm_up",
+    "scheduler_hp": {"num_warmup_steps": 500},
+    "batch_size": 32,
+    "max_seq_length": 128,
+    "optimizer_hp": {"lr": 1e-5, "eps": 1e-8},
+    "use_sampler": False,
+}
