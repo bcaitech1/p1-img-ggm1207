@@ -93,6 +93,7 @@ if __name__ == "__main__":
         wandb.init(project="p-stage-2")
         wandb.config.update(args)
         wandb.watch(model)
+        wandb.run.name = args.base_name
 
     train_dataloader, valid_dataloader = load_dataloader(args, tokenizer)
 
