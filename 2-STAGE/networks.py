@@ -6,6 +6,7 @@ from sklearn.metrics import accuracy_score
 
 from losses import get_lossfn
 from optimizers import get_optimizer, get_scheduler
+from tokenization_kobert import KoBertTokenizer
 
 
 class BertBase(nn.Module):
@@ -125,6 +126,9 @@ def load_model_and_tokenizer(args):
 
     model.to(args.device)
 
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
+    if args.model_name_or_path in ["monologg/distilkobert", "monologg/kobert"]:
+        tokenizer = KoBertTokenizer(args.model_name_or_path, args.model_name_or_path)
+    else:
+        tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 
     return model, tokenizer

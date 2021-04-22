@@ -27,7 +27,7 @@ def get_args():
         pa("--weight_dir", default="/opt/ml/P-Stage/2-STAGE/weights")
         pa("--data_dir", default="/opt/ml/input/data")
         pa("--data_kind", default="dataset_v1")
-        pa("--strategy", default="st01")
+        pa("--strategy", default="st00")
         pa("--submit_dir", default="/opt/ml/P-Stage/2-STAGE/submits")
     else:
         pa(
