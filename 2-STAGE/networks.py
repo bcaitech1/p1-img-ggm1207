@@ -1,4 +1,6 @@
 #  from transformers import AutoConfig, AutoModelForSequenceClassification, AutoTokenizer
+import os
+
 import torch
 import torch.nn as nn
 from transformers import AutoConfig, AutoTokenizer, AutoModelForSequenceClassification
@@ -127,7 +129,9 @@ def load_model_and_tokenizer(args):
     model.to(args.device)
 
     if args.model_name_or_path in ["monologg/distilkobert", "monologg/kobert"]:
-        tokenizer = KoBertTokenizer(args.model_name_or_path, args.model_name_or_path)
+        vocab_file = os.path.join("./model_vocab", args.ms_name + ".model")
+        vocab_txt = os.path.join("./model_vocab", args.ms_name + ".txt")
+        tokenizer = KoBertTokenizer(vocab_file, vocab_txt)
     else:
         tokenizer = AutoTokenizer.from_pretrained(args.model_name_or_path)
 

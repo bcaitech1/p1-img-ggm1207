@@ -96,8 +96,8 @@ class KoBertTokenizer(PreTrainedTokenizer):
         self.token2idx = dict()
         self.idx2token = []
 
-        vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][vocab_file]
-        vocab_txt = PRETRAINED_VOCAB_FILES_MAP["vocab_txt"][vocab_txt]
+        #  vocab_file = PRETRAINED_VOCAB_FILES_MAP["vocab_file"][vocab_file]
+        #  vocab_txt = PRETRAINED_VOCAB_FILES_MAP["vocab_txt"][vocab_txt]
 
         with open(vocab_txt, "r", encoding="utf-8") as f:
             for idx, token in enumerate(f):

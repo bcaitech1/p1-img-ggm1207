@@ -84,6 +84,7 @@ if __name__ == "__main__":
     from config import get_args
     from utils import update_args
     from argparse import Namespace
+    from prepare import load_sample
 
     args = get_args()
     args = update_args(args, args.strategy, hp_space.strat)
@@ -102,6 +103,8 @@ if __name__ == "__main__":
 
     model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
     test_dataloader = load_test_dataloader(args, tokenizer)
+
+    inputs, samples = load_sample(args, tokenizer, is_train=False)
 
     results = model.evaluate(test_dataloader, return_keys=["acc", "logits"])
     print(results)

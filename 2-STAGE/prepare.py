@@ -190,19 +190,69 @@ def load_dataloader(args, tokenizer):
 def tokenized_dataset(args, dataset, tokenizer):
     concat_entity = []
 
-    for idx, (e01, e02) in enumerate(zip(dataset["e1"], dataset["e2"])):
-        #  concat_entity.append(e01 + "[SEP]" + e02)
-        concat_entity.append(e01 + tokenizer.special_tokens_map["sep_token"] + e02)
+    if args.model_name_or_path not in ["monologg/distilkobert", "monologg/kobert"]:
+        for idx, (e01, e02) in enumerate(zip(dataset["e1"], dataset["e2"])):
+            #  concat_entity.append(e01 + "[SEP]" + e02)
+            concat_entity.append(e01 + tokenizer.special_tokens_map["sep_token"] + e02)
 
-    tokenized_sentences = tokenizer(
-        concat_entity,
-        list(dataset["words"]),
-        return_tensors="pt",
-        padding=True,
-        truncation=True,
-        max_length=args.max_seq_length,  # 길수록 속도 느려짐
-        add_special_tokens=True,
-    )
+        print(tokenizer.tokenize(dataset["words"][0]))
+
+        tokenized_sentences = tokenizer(
+            concat_entity,
+            list(dataset["words"]),
+            return_tensors="pt",
+            padding=True,
+            truncation=True,
+            max_length=args.max_seq_length,  # 길수록 속도 느려짐
+            add_special_tokens=True,
+        )
+    else:
+        all_input_ids = []
+        all_token_type_ids = []
+        all_attention_mask = []
+
+        special_tokens_count = 1
+
+        for idx, (e01, e02, words) in enumerate(
+            zip(dataset["e1"], dataset["e2"], dataset["words"])
+        ):
+            e1_tokens = tokenizer.tokenize(e01)
+            e2_tokens = tokenizer.tokenize(e02)
+            word_tokens = tokenizer.tokenize(words)
+
+            tokens = (
+                ["[CLS]"] + e1_tokens + ["[SEP]"] + e2_tokens + ["[SEP]"] + word_tokens
+            )
+
+            if len(tokens) > args.max_seq_length - special_tokens_count:
+                tokens = tokens[: (args.max_seq_length - special_tokens_count)]
+
+            tokens += ["[SEP]"]
+
+            token_type_ids = [0] * len(tokens)
+            input_ids = tokenizer.convert_tokens_to_ids(tokens)
+
+            attention_mask = [1] * len(input_ids)
+
+            padding_length = args.max_seq_length - len(input_ids)
+            input_ids += [tokenizer.pad_token_id] * padding_length
+
+            attention_mask += [0] * padding_length
+            token_type_ids += [0] * padding_length  # 질문 문제가 아니라서..
+
+            assert len(input_ids) == args.max_seq_length
+            assert len(attention_mask) == args.max_seq_length
+            assert len(token_type_ids) == args.max_seq_length
+
+            all_input_ids.append(input_ids)
+            all_token_type_ids.append(token_type_ids)
+            all_attention_mask.append(attention_mask)
+
+        tokenized_sentences = {
+            "input_ids": torch.tensor(all_input_ids),
+            "token_type_ids": torch.tensor(all_token_type_ids),
+            "attention_mask": torch.tensor(all_attention_mask),
+        }
 
     return tokenized_sentences
 
