@@ -175,9 +175,6 @@ def run_without_raytune():
         run(args, model, train_dataloader, valid_dataloader)
 
         torch.cuda.empty_cache()
-        if_best_score_auto_submit(args, args.save_path)
-
-        torch.cuda.empty_cache()
         hook_simple_text(f":joy: {args.base_name} 학습 끝!!!")
 
 
