@@ -86,25 +86,29 @@ if __name__ == "__main__":
     from argparse import Namespace
     from prepare import load_sample
 
-    args = get_args()
-    args = update_args(args, args.strategy, hp_space.strat)
-    args = Namespace(**args)
-
-    save_path = (
-        "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st00_testmodel_001.pth",
-    )
-
-    print(args)
-
-    #  if_best_score_auto_submit(
-    #      args,
-    #      save_path
+    #  args = get_args()
+    #  args = update_args(args, args.strategy, hp_space.strat)
+    #  args = Namespace(**args)
+    #
+    #  save_path = (
+    #      "/home/j-gunmo/desktop/00.my-project/17.P-Stage-T1003/2-STAGE/weights/st00_testmodel_001.pth",
     #  )
+    #
+    #  print(args)
+    #
+    #  #  if_best_score_auto_submit(
+    #  #      args,
+    #  #      save_path
+    #  #  )
+    #
+    #  model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
+    #  test_dataloader = load_test_dataloader(args, tokenizer)
+    #
+    #  inputs, samples = load_sample(args, tokenizer, is_train=False)
+    #
+    #  results = model.evaluate(test_dataloader, return_keys=["acc", "logits"])
+    #  print(results)
 
-    model, tokenizer = load_model_and_tokenizer(args)  # to(args.device)
-    test_dataloader = load_test_dataloader(args, tokenizer)
+    user_key = "Bearer 5c12695179ea1f0a97aec9ce2be8da028755f095"
 
-    inputs, samples = load_sample(args, tokenizer, is_train=False)
-
-    results = model.evaluate(test_dataloader, return_keys=["acc", "logits"])
-    print(results)
+    auto_submit(user_key, "test", "ensemble6.csv")

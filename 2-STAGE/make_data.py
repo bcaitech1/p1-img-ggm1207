@@ -1,6 +1,7 @@
 import os
 import copy
 import pickle
+from functools import partial
 
 import pandas as pd
 from sklearn.model_selection import StratifiedShuffleSplit
@@ -18,14 +19,14 @@ def load_org_dataset(dataset_dir):
 
 def modify_missing_label(train_df):
     mislabel = """wikitree-55837-4-0-2-10-11
-    wikitree-62775-3-3-7-0-2
-    wikitree-12599-4-108-111-4-7
-    wikipedia-25967-115-24-26-35-37
-    wikipedia-16427-6-14-17-20-22
-    wikipedia-16427-8-0-3-26-28
-    wikitree-19765-5-30-33-6-8
-    wikitree-58702-0-18-20-22-24
-    wikitree-71638-8-21-23-15-17"""
+wikitree-62775-3-3-7-0-2
+wikitree-12599-4-108-111-4-7
+wikipedia-25967-115-24-26-35-37
+wikipedia-16427-6-14-17-20-22
+wikipedia-16427-8-0-3-26-28
+wikitree-19765-5-30-33-6-8
+wikitree-58702-0-18-20-22-24
+wikitree-71638-8-21-23-15-17"""
     mislabel = mislabel.split("\n")
 
     modlabel = [
@@ -133,6 +134,8 @@ def make_dataset(
 
     path = os.path.join(save_path, "test.pkl")
     make_sub_dataset(test_dataset, label_type, words_trans_fn, path)
+
+    show_sample_dataset(data_dir, data_kind)
 
 
 def make_entity_independent(word, e1, e2):
@@ -256,32 +259,28 @@ def main(data_dir):
         word, e1, e2 = make_entity_to_one_words(word, e1, e2)
         return word, e1, e2
 
-    make_dataset(
-        train_dataset, test_dataset, data_dir, "dataset_v1", dataset_v1_pipeline
+    make_dataset_ = partial(
+        make_dataset,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+        data_dir=data_dir,
     )
-    show_sample_dataset(data_dir, "dataset_v1")
 
-    make_dataset(
-        train_dataset, test_dataset, data_dir, "dataset_v2", dataset_v2_pipeline
-    )
-    show_sample_dataset(data_dir, "dataset_v2")
-
-    make_dataset(
-        train_dataset, test_dataset, data_dir, "dataset_v3", dataset_v3_pipeline
-    )
-    show_sample_dataset(data_dir, "dataset_v3")
+    make_dataset_(data_kind="dataset_v1", words_trans_fn=dataset_v1_pipeline)
+    make_dataset_(data_kind="dataset_v2", words_trans_fn=dataset_v2_pipeline)
+    make_dataset_(data_kind="dataset_v3", words_trans_fn=dataset_v3_pipeline)
 
     train_dataset = add_dataset_with_new_data(copy.deepcopy(train_dataset), data_dir)
 
-    make_dataset(
-        train_dataset, test_dataset, data_dir, "dataset_v4", dataset_v1_pipeline
+    make_dataset_ = partial(
+        make_dataset,
+        train_dataset=train_dataset,
+        test_dataset=test_dataset,
+        data_dir=data_dir,
     )
-    show_sample_dataset(data_dir, "dataset_v4")
 
-    make_dataset(
-        train_dataset, test_dataset, data_dir, "dataset_v5", dataset_v3_pipeline
-    )
-    show_sample_dataset(data_dir, "dataset_v5")
+    make_dataset_(data_kind="dataset_v4", words_trans_fn=dataset_v1_pipeline)
+    make_dataset_(data_kind="dataset_v5", words_trans_fn=dataset_v3_pipeline)
 
 
 if __name__ == "__main__":
